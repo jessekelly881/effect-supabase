@@ -50,6 +50,9 @@
     "vitest": "^1.0.1"
   },
   "dependencies": {
-    "@effect/dtslint": "^0.0.5"
+    "@effect/dtslint": "^0.0.5",
+    "@effect/schema": "^0.64.5",
+    "@supabase/supabase-js": "^2.39.8",
+    "effect": "^2.4.7"
   }
 }
