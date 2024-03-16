@@ -11,17 +11,25 @@ const TimeStamped = S.struct({
 
 export const UserId = S.UUID.pipe(S.brand("UserId"));
 
-export const AppMetadata = S.struct(
+export const _AppMetadata = S.struct(
 	{ provider: S.optional(S.string) },
 	S.record(S.string, S.unknown)
-) satisfies S.Schema<any, Sb.UserAppMetadata>;
+);
 
-export const UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
+export interface AppMetadata extends S.Schema.Type<typeof _AppMetadata> {}
+export const AppMetadata: S.Schema<AppMetadata, Sb.UserAppMetadata> =
+	_AppMetadata;
+
+export const _UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
 	any,
 	Sb.UserMetadata
 >;
 
-export const UserIdentity = S.struct({
+export interface UserMetadata extends S.Schema.Type<typeof _UserMetadata> {}
+export const UserMetadata: S.Schema<UserMetadata, Sb.UserMetadata> =
+	_UserMetadata;
+
+export const _UserIdentity = S.struct({
 	id: S.string,
 	userId: UserId.pipe(ps, S.fromKey("user_id")),
 	identityData: S.optional(S.record(S.string, S.unknown)).pipe(
@@ -32,17 +40,24 @@ export const UserIdentity = S.struct({
 	lastSignInAt: S.optional(S.string).pipe(S.fromKey("last_sign_in_at")),
 	createdAt: S.optional(S.Date).pipe(S.fromKey("created_at")),
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
-}) satisfies S.Schema<any, Sb.UserIdentity>;
+});
 
-const Factor = S.struct({
+export interface UserIdentity extends S.Schema.Type<typeof _UserIdentity> {}
+export const UserIdentity: S.Schema<UserIdentity, Sb.UserIdentity> =
+	_UserIdentity;
+
+const _Factor = S.struct({
 	id: S.string,
 	friendlyName: S.optional(S.string).pipe(S.fromKey("friendly_name")),
 	factorType: S.string.pipe(ps, S.fromKey("factor_type")),
 	status: S.literal("verified", "unverified"),
 	...TimeStamped.fields
-}) satisfies S.Schema<any, Sb.Factor>;
+});
 
-export const User = S.struct({
+export interface Factor extends S.Schema.Type<typeof _Factor> {}
+export const Factor: S.Schema<Factor, Sb.Factor> = _Factor;
+
+export const _User = S.struct({
 	id: UserId,
 	appMetadata: AppMetadata.pipe(ps, S.fromKey("app_metadata")),
 	userMetadata: UserMetadata.pipe(ps, S.fromKey("user_metadata")),
@@ -73,9 +88,12 @@ export const User = S.struct({
 
 	createdAt: S.Date.pipe(ps, S.fromKey("created_at")),
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
-}) satisfies S.Schema<any, Sb.User>;
+});
 
-export const Session = S.struct({
+export interface User extends S.Schema.Type<typeof _User> {}
+export const User: S.Schema<User, Sb.User> = _User;
+
+export const _Session = S.struct({
 	providerToken: S.optional(S.string, { nullable: true }).pipe(
 		S.fromKey("provider_token")
 	),
@@ -88,4 +106,7 @@ export const Session = S.struct({
 	expiresAt: S.optional(S.number).pipe(S.fromKey("expires_at")),
 	tokenType: S.string.pipe(ps, S.fromKey("token_type")),
 	user: User
-}) satisfies S.Schema<any, Sb.Session>;
+});
+
+export interface Session extends S.Schema.Type<typeof _Session> {}
+export const Session: S.Schema<Session, Sb.Session> = _Session;
