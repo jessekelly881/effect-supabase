@@ -1,5 +1,5 @@
 ---
-"@kellyjesse881/empty": patch
+"effect-supabase": patch
 ---
 
-update
+init
