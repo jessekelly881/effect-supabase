@@ -1,5 +1,6 @@
-import type * as Sb from "@supabase/supabase-js";
-import * as S from "@effect/schema/Schema";
+import * as Sb from "@supabase/supabase-js";
+import { Schema as S, ParseResult } from "@effect/schema";
+import { Effect, Option, Layer } from "effect";
 
 const ps = S.propertySignature;
 
@@ -11,7 +12,8 @@ const TimeStamped = S.struct({
 
 export const UserId = S.UUID.pipe(S.brand("UserId"));
 
-export const _AppMetadata = S.struct(
+/** @internal */
+const _AppMetadata = S.struct(
 	{ provider: S.optional(S.string) },
 	S.record(S.string, S.unknown)
 );
@@ -20,7 +22,8 @@ export interface AppMetadata extends S.Schema.Type<typeof _AppMetadata> {}
 export const AppMetadata: S.Schema<AppMetadata, Sb.UserAppMetadata> =
 	_AppMetadata;
 
-export const _UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
+/** @internal */
+const _UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
 	any,
 	Sb.UserMetadata
 >;
@@ -29,7 +32,8 @@ export interface UserMetadata extends S.Schema.Type<typeof _UserMetadata> {}
 export const UserMetadata: S.Schema<UserMetadata, Sb.UserMetadata> =
 	_UserMetadata;
 
-export const _UserIdentity = S.struct({
+/** @internal */
+const _UserIdentity = S.struct({
 	id: S.string,
 	userId: UserId.pipe(ps, S.fromKey("user_id")),
 	identityData: S.optional(S.record(S.string, S.unknown)).pipe(
@@ -46,6 +50,7 @@ export interface UserIdentity extends S.Schema.Type<typeof _UserIdentity> {}
 export const UserIdentity: S.Schema<UserIdentity, Sb.UserIdentity> =
 	_UserIdentity;
 
+/** @internal */
 const _Factor = S.struct({
 	id: S.string,
 	friendlyName: S.optional(S.string).pipe(S.fromKey("friendly_name")),
@@ -57,7 +62,8 @@ const _Factor = S.struct({
 export interface Factor extends S.Schema.Type<typeof _Factor> {}
 export const Factor: S.Schema<Factor, Sb.Factor> = _Factor;
 
-export const _User = S.struct({
+/** @internal */
+const _User = S.struct({
 	id: UserId,
 	appMetadata: AppMetadata.pipe(ps, S.fromKey("app_metadata")),
 	userMetadata: UserMetadata.pipe(ps, S.fromKey("user_metadata")),
@@ -93,7 +99,8 @@ export const _User = S.struct({
 export interface User extends S.Schema.Type<typeof _User> {}
 export const User: S.Schema<User, Sb.User> = _User;
 
-export const _Session = S.struct({
+/** @internal */
+const _Session = S.struct({
 	providerToken: S.optional(S.string, { nullable: true }).pipe(
 		S.fromKey("provider_token")
 	),
@@ -110,3 +117,82 @@ export const _Session = S.struct({
 
 export interface Session extends S.Schema.Type<typeof _Session> {}
 export const Session: S.Schema<Session, Sb.Session> = _Session;
+
+export class Supabase extends Effect.Tag("Supabase")<
+	Supabase,
+	{
+		client: Sb.SupabaseClient<any, never, any>;
+		signUp: (
+			credentials: Sb.SignUpWithPasswordCredentials
+		) => Effect.Effect<{ user?: User; session?: Session }, Sb.AuthError>;
+
+		signInWithOAuth: (
+			credentials: Sb.SignInWithOAuthCredentials
+		) => Effect.Effect<Sb.OAuthResponse>;
+
+		signInWithPassword: (
+			credentials: Sb.SignInWithPasswordCredentials
+		) => Effect.Effect<Sb.AuthTokenResponsePassword>;
+
+		getUser: () => Effect.Effect<
+			Option.Option<User>,
+			ParseResult.ParseError
+		>;
+	}
+>() {}
+
+export const layer = (...params: Parameters<typeof Sb.createClient>) =>
+	Layer.effect(
+		Supabase,
+		Effect.gen(function* (_) {
+			const client = yield* _(
+				Effect.sync(() => Sb.createClient(...params))
+			);
+			const decodeUser = S.decodeUnknown(User);
+
+			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
+				Effect.flatMap(
+					Effect.promise(() => client.auth.signUp(credentials)),
+					(res) =>
+						res.data
+							? Effect.succeed(res.data)
+							: res.error
+								? Effect.fail(res.error)
+								: Effect.succeed({} as any)
+				);
+
+			const signInWithOAuth = (
+				credentials: Sb.SignInWithOAuthCredentials
+			) => Effect.promise(() => client.auth.signInWithOAuth(credentials));
+
+			const signInWithPassword = (
+				credentials: Sb.SignInWithPasswordCredentials
+			) =>
+				Effect.promise(() =>
+					client.auth.signInWithPassword(credentials)
+				);
+
+			const getUser = () =>
+				Effect.gen(function* (_) {
+					const { data } = yield* _(
+						Effect.promise(() => client.auth.getUser())
+					);
+
+					if (!data) {
+						return Option.none<User>();
+					}
+
+					const user = yield* _(decodeUser(data.user));
+					yield* _(Effect.log(user));
+					return Option.some(user);
+				});
+
+			return Supabase.of({
+				client,
+				getUser,
+				signUp,
+				signInWithOAuth,
+				signInWithPassword
+			});
+		})
+	);
