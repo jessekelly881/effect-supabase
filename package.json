@@ -33,10 +33,10 @@
     "@changesets/cli": "^2.26.0",
     "@effect/docgen": "^0.3.8",
     "@fast-check/vitest": "^0.1.0",
-    "@types/node": "^20.8.4",
+    "@types/node": "^20.11.28",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
     "@typescript-eslint/parser": "^7.0.2",
-    "bun": "^1.0.7",
+    "bun": "^1.0.32",
     "eslint": "^8.51.0",
     "eslint-plugin-deprecation": "^2.0.0",
     "fast-check": "^3.14.0",
@@ -47,7 +47,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.1.4",
-    "vitest": "^1.0.1"
+    "vitest": "^1.4.0"
   },
   "dependencies": {
     "@effect/dtslint": "^0.0.5",
