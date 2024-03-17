@@ -1,3 +1,7 @@
+/**
+ * @since 1.0.0
+ */
+
 import * as Sb from "@supabase/supabase-js";
 import { Schema as S, ParseResult } from "@effect/schema";
 import { Effect, Option, Layer } from "effect";
@@ -10,6 +14,9 @@ const TimeStamped = S.struct({
 	updatedAt: S.Date.pipe(ps, S.fromKey("updated_at"))
 });
 
+/**
+ * @since 1.0.0
+ */
 export const UserId = S.UUID.pipe(S.brand("UserId"));
 
 /** @internal */
@@ -18,7 +25,14 @@ const _AppMetadata = S.struct(
 	S.record(S.string, S.unknown)
 );
 
+/**
+ * @since 1.0.0
+ */
 export interface AppMetadata extends S.Schema.Type<typeof _AppMetadata> {}
+
+/**
+ * @since 1.0.0
+ */
 export const AppMetadata: S.Schema<AppMetadata, Sb.UserAppMetadata> =
 	_AppMetadata;
 
@@ -28,7 +42,14 @@ const _UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
 	Sb.UserMetadata
 >;
 
+/**
+ * @since 1.0.0
+ */
 export interface UserMetadata extends S.Schema.Type<typeof _UserMetadata> {}
+
+/**
+ * @since 1.0.0
+ */
 export const UserMetadata: S.Schema<UserMetadata, Sb.UserMetadata> =
 	_UserMetadata;
 
@@ -46,7 +67,14 @@ const _UserIdentity = S.struct({
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
 });
 
+/**
+ * @since 1.0.0
+ */
 export interface UserIdentity extends S.Schema.Type<typeof _UserIdentity> {}
+
+/**
+ * @since 1.0.0
+ */
 export const UserIdentity: S.Schema<UserIdentity, Sb.UserIdentity> =
 	_UserIdentity;
 
@@ -59,7 +87,14 @@ const _Factor = S.struct({
 	...TimeStamped.fields
 });
 
+/**
+ * @since 1.0.0
+ */
 export interface Factor extends S.Schema.Type<typeof _Factor> {}
+
+/**
+ * @since 1.0.0
+ */
 export const Factor: S.Schema<Factor, Sb.Factor> = _Factor;
 
 /** @internal */
@@ -96,7 +131,14 @@ const _User = S.struct({
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
 });
 
+/**
+ * @since 1.0.0
+ */
 export interface User extends S.Schema.Type<typeof _User> {}
+
+/**
+ * @since 1.0.0
+ */
 export const User: S.Schema<User, Sb.User> = _User;
 
 /** @internal */
@@ -115,25 +157,51 @@ const _Session = S.struct({
 	user: User
 });
 
+/**
+ * @since 1.0.0
+ */
 export interface Session extends S.Schema.Type<typeof _Session> {}
+
+/**
+ * @since 1.0.0
+ */
 export const Session: S.Schema<Session, Sb.Session> = _Session;
 
+/**
+ * @since 1.0.0
+ */
 export class Supabase extends Effect.Tag("Supabase")<
 	Supabase,
 	{
+		/**
+		 * @since 1.0.0
+		 */
 		client: Sb.SupabaseClient<any, never, any>;
+
+		/**
+		 * @since 1.0.0
+		 */
 		signUp: (
 			credentials: Sb.SignUpWithPasswordCredentials
 		) => Effect.Effect<{ user?: User; session?: Session }, Sb.AuthError>;
 
+		/**
+		 * @since 1.0.0
+		 */
 		signInWithOAuth: (
 			credentials: Sb.SignInWithOAuthCredentials
 		) => Effect.Effect<Sb.OAuthResponse>;
 
+		/**
+		 * @since 1.0.0
+		 */
 		signInWithPassword: (
 			credentials: Sb.SignInWithPasswordCredentials
 		) => Effect.Effect<Sb.AuthTokenResponsePassword>;
 
+		/**
+		 * @since 1.0.0
+		 */
 		getUser: () => Effect.Effect<
 			Option.Option<User>,
 			ParseResult.ParseError
@@ -141,6 +209,9 @@ export class Supabase extends Effect.Tag("Supabase")<
 	}
 >() {}
 
+/**
+ * @since 1.0.0
+ */
 export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 	Layer.effect(
 		Supabase,
