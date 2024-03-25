@@ -1,5 +1,0 @@
----
-"effect-supabase": patch
----
-
-init
