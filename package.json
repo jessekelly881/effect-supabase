@@ -31,7 +31,7 @@
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
-    "@effect/docgen": "^0.3.8",
+    "@effect/docgen": "^0.4.0",
     "@fast-check/vitest": "^0.1.0",
     "@types/node": "^20.11.28",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
@@ -50,7 +50,7 @@
     "vitest": "^1.4.0"
   },
   "dependencies": {
-    "@effect/dtslint": "^0.0.5",
+    "@effect/dtslint": "^0.1.0",
     "@effect/schema": "^0.64.5",
     "@supabase/supabase-js": "^2.39.8",
     "effect": "^2.4.7"
