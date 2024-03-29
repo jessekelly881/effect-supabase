@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.3
+
+### Patch Changes
+
+- 1a9b8f9: fixed type error
+
 ## 0.0.2
 
 ### Patch Changes
