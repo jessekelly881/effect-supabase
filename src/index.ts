@@ -4,7 +4,45 @@
 
 import * as Sb from "@supabase/supabase-js";
 import { Schema as S, ParseResult } from "@effect/schema";
-import { Effect, Option, Layer } from "effect";
+import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import {
+	Effect,
+	Option,
+	Layer,
+	Data,
+	Request,
+	RequestResolver,
+	pipe
+} from "effect";
+/**
+ * @since 1.0.0
+ */
+export const SupabaseErrorId = Symbol.for("effect-supabase/Error");
+
+/**
+ * @since 1.0.0
+ */
+export type SupabaseErrorId = typeof SupabaseErrorId;
+
+/**
+ * @since 1.0.0
+ */
+export const ResultLengthMismatch = (expected: number, actual: number) =>
+	Data.tagged<ResultLengthMismatch>("ResultLengthMismatch")({
+		[SupabaseErrorId]: SupabaseErrorId,
+		expected,
+		actual
+	});
+
+/**
+ * @since 1.0.0
+ */
+export interface ResultLengthMismatch {
+	readonly [SupabaseErrorId]: SupabaseErrorId;
+	readonly _tag: "ResultLengthMismatch";
+	readonly expected: number;
+	readonly actual: number;
+}
 
 const ps = S.propertySignature;
 
@@ -167,6 +205,81 @@ export interface Session extends S.Schema.Type<typeof _Session> {}
  */
 export const Session: S.Schema<Session, Sb.Session> = _Session;
 
+/** @internal */
+const resolver = <
+	T extends string,
+	IR,
+	II,
+	IA,
+	AR,
+	AI,
+	A,
+	Q extends PostgrestFilterBuilder<any, any, unknown[]>
+>(
+	tag: T,
+	options: {
+		readonly request: S.Schema<IA, II, IR>;
+		readonly result: S.Schema<A, AI, AR>;
+		run: (requests: ReadonlyArray<II>) => Q;
+	}
+) => {
+	interface Req
+		extends Request.Request<
+			A,
+			ResultLengthMismatch | ParseResult.ParseError
+		> {
+		readonly value: IA;
+		readonly _tag: T;
+	}
+
+	const request = Request.tagged<Req>(tag);
+	const decodeResult = S.decodeUnknown(options.result);
+	const encodeRequests = S.encode(S.array(options.request));
+
+	const resolver = RequestResolver.makeBatched((requests: Req[]) =>
+		pipe(
+			encodeRequests(requests.map((r) => r.value)),
+			Effect.flatMap(
+				(as) =>
+					Effect.promise((signal) =>
+						options.run(as).abortSignal(signal)
+					) // supply client instance (items, client) => ...
+			),
+			Effect.map((s) => s.data || []),
+			Effect.filterOrFail(
+				(results) => results.length === requests.length,
+				(_) => ResultLengthMismatch(requests.length, _.length)
+			),
+			Effect.flatMap((results) =>
+				Effect.forEach(results, (result, i) =>
+					pipe(
+						decodeResult(result),
+						Effect.flatMap((result) =>
+							Request.succeed(requests[i], result)
+						),
+						Effect.catchAll((error) =>
+							Request.fail(requests[i], error as any)
+						)
+					)
+				)
+			),
+			Effect.catchAll((error) =>
+				Effect.forEach(requests, (req) => Request.fail(req, error), {
+					discard: true
+				})
+			)
+		)
+	);
+
+	const execute = (i: IA) =>
+		Effect.request(
+			request({ value: i }),
+			RequestResolver.contextFromEffect(resolver)
+		);
+
+	return { request, resolver, execute };
+};
+
 /**
  * @since 1.0.0
  */
@@ -177,6 +290,11 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 * @since 1.0.0
 		 */
 		client: Sb.SupabaseClient<any, never, any>;
+
+		/**
+		 * @since 1.0.0
+		 */
+		resolver: typeof resolver;
 
 		/**
 		 * @since 1.0.0
@@ -263,7 +381,8 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 				getUser,
 				signUp,
 				signInWithOAuth,
-				signInWithPassword
+				signInWithPassword,
+				resolver
 			});
 		})
 	);

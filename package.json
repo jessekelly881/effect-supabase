@@ -52,6 +52,7 @@
   "dependencies": {
     "@effect/dtslint": "^0.1.0",
     "@effect/schema": "^0.64.5",
+    "@supabase/postgrest-js": "^1.14.0",
     "@supabase/supabase-js": "^2.39.8",
     "effect": "^2.4.7"
   }

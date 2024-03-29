@@ -11,6 +11,9 @@ dependencies:
   '@effect/schema':
     specifier: ^0.64.5
     version: 0.64.13(effect@2.4.13)(fast-check@3.17.0)
+  '@supabase/postgrest-js':
+    specifier: ^1.14.0
+    version: 1.14.0
   '@supabase/supabase-js':
     specifier: ^2.39.8
     version: 2.40.0
@@ -331,7 +334,7 @@ packages:
     dependencies:
       doctrine: 3.0.0
       glob: 10.3.10
-      markdown-toc: git@github.com+effect-ts/markdown-toc/4bfeb0f140105440ea0d12df2fa23199cc3ec1d5
+      markdown-toc: github.com/effect-ts/markdown-toc/4bfeb0f140105440ea0d12df2fa23199cc3ec1d5
       prettier: 3.2.5
       tsx: 4.7.1
       typescript: 5.4.3
@@ -1219,6 +1222,12 @@ packages:
     engines: {node: 4.x || >=6.0.0}
     dependencies:
       whatwg-url: 5.0.0
+    dev: false
+
+  /@supabase/postgrest-js@1.14.0:
+    resolution: {integrity: sha512-bepgdSUup9CMCunbsgQur9+N6+/ZLBCVf3jH6c3mZihZY/k1BSZLladb4UaYmxk/P1i/JbpUiJp3mlJKfXyhxQ==}
+    dependencies:
+      '@supabase/node-fetch': 2.6.15
     dev: false
 
   /@supabase/postgrest-js@1.9.2:
@@ -6642,8 +6651,8 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  git@github.com+effect-ts/markdown-toc/4bfeb0f140105440ea0d12df2fa23199cc3ec1d5:
-    resolution: {commit: 4bfeb0f140105440ea0d12df2fa23199cc3ec1d5, repo: git@github.com:effect-ts/markdown-toc.git, type: git}
+  github.com/effect-ts/markdown-toc/4bfeb0f140105440ea0d12df2fa23199cc3ec1d5:
+    resolution: {tarball: https://codeload.github.com/effect-ts/markdown-toc/tar.gz/4bfeb0f140105440ea0d12df2fa23199cc3ec1d5}
     name: markdown-toc
     version: 1.2.0
     engines: {node: '>=0.10.0'}
