@@ -206,6 +206,16 @@ export interface Session extends S.Schema.Type<typeof _Session> {}
 export const Session: S.Schema<Session, Sb.Session> = _Session;
 
 /** @internal */
+interface Req<T, A, IA>
+	extends Request.Request<
+		A,
+		ResultLengthMismatch | ParseResult.ParseError
+	> {
+	readonly value: IA;
+	readonly _tag: T;
+}
+
+/** @internal */
 const resolver = <
 	T extends string,
 	IR,
@@ -223,20 +233,11 @@ const resolver = <
 		run: (requests: ReadonlyArray<II>) => Q;
 	}
 ) => {
-	interface Req
-		extends Request.Request<
-			A,
-			ResultLengthMismatch | ParseResult.ParseError
-		> {
-		readonly value: IA;
-		readonly _tag: T;
-	}
-
-	const request = Request.tagged<Req>(tag);
+	const request = Request.tagged<Req<T, A, IA>>(tag);
 	const decodeResult = S.decodeUnknown(options.result);
 	const encodeRequests = S.encode(S.array(options.request));
 
-	const resolver = RequestResolver.makeBatched((requests: Req[]) =>
+	const resolver = RequestResolver.makeBatched((requests: Req<T, A, IA>[]) =>
 		pipe(
 			encodeRequests(requests.map((r) => r.value)),
 			Effect.flatMap(
@@ -337,6 +338,7 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 			const client = yield* _(
 				Effect.sync(() => Sb.createClient(...params))
 			);
+
 			const decodeUser = S.decodeUnknown(User);
 
 			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
