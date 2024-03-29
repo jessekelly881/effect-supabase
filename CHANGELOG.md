@@ -1,5 +1,12 @@
 # @kellyjesse881/empty
 
+## 0.0.2
+
+### Patch Changes
+
+- 168d102: init
+- 4db08af: added Supabase.resolver
+
 ## 0.0.4
 
 ### Patch Changes
