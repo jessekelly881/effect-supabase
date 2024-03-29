@@ -205,8 +205,10 @@ export interface Session extends S.Schema.Type<typeof _Session> {}
  */
 export const Session: S.Schema<Session, Sb.Session> = _Session;
 
-/** @internal */
-interface Req<T, A, IA>
+/**
+ * @since 1.0.0
+ */
+export interface Req<T, A, IA>
 	extends Request.Request<
 		A,
 		ResultLengthMismatch | ParseResult.ParseError
@@ -214,72 +216,6 @@ interface Req<T, A, IA>
 	readonly value: IA;
 	readonly _tag: T;
 }
-
-/** @internal */
-const resolver = <
-	T extends string,
-	IR,
-	II,
-	IA,
-	AR,
-	AI,
-	A,
-	Q extends PostgrestFilterBuilder<any, any, unknown[]>
->(
-	tag: T,
-	options: {
-		readonly request: S.Schema<IA, II, IR>;
-		readonly result: S.Schema<A, AI, AR>;
-		run: (requests: ReadonlyArray<II>) => Q;
-	}
-) => {
-	const request = Request.tagged<Req<T, A, IA>>(tag);
-	const decodeResult = S.decodeUnknown(options.result);
-	const encodeRequests = S.encode(S.array(options.request));
-
-	const resolver = RequestResolver.makeBatched((requests: Req<T, A, IA>[]) =>
-		pipe(
-			encodeRequests(requests.map((r) => r.value)),
-			Effect.flatMap(
-				(as) =>
-					Effect.promise((signal) =>
-						options.run(as).abortSignal(signal)
-					) // supply client instance (items, client) => ...
-			),
-			Effect.map((s) => s.data || []),
-			Effect.filterOrFail(
-				(results) => results.length === requests.length,
-				(_) => ResultLengthMismatch(requests.length, _.length)
-			),
-			Effect.flatMap((results) =>
-				Effect.forEach(results, (result, i) =>
-					pipe(
-						decodeResult(result),
-						Effect.flatMap((result) =>
-							Request.succeed(requests[i], result)
-						),
-						Effect.catchAll((error) =>
-							Request.fail(requests[i], error as any)
-						)
-					)
-				)
-			),
-			Effect.catchAll((error) =>
-				Effect.forEach(requests, (req) => Request.fail(req, error), {
-					discard: true
-				})
-			)
-		)
-	);
-
-	const execute = (i: IA) =>
-		Effect.request(
-			request({ value: i }),
-			RequestResolver.contextFromEffect(resolver)
-		);
-
-	return { request, resolver, execute };
-};
 
 /**
  * @since 1.0.0
@@ -295,7 +231,33 @@ export class Supabase extends Effect.Tag("Supabase")<
 		/**
 		 * @since 1.0.0
 		 */
-		resolver: typeof resolver;
+		resolver: <
+			T extends string,
+			IR,
+			II,
+			IA,
+			AR,
+			AI,
+			A,
+			Q extends PostgrestFilterBuilder<any, any, unknown[]>
+		>(
+			tag: T,
+			options: {
+				readonly request: S.Schema<IA, II, IR>;
+				readonly result: S.Schema<A, AI, AR>;
+				run: (requests: ReadonlyArray<II>) => Q;
+			}
+		) => {
+			request: Request.Request.Constructor<Req<T, A, IA>, "_tag">;
+			resolver: RequestResolver.RequestResolver<Req<T, A, IA>, IR | AR>;
+			execute: (
+				i: IA
+			) => Effect.Effect<
+				A,
+				ParseResult.ParseError | ResultLengthMismatch,
+				IR | AR
+			>;
+		};
 
 		/**
 		 * @since 1.0.0
@@ -377,6 +339,83 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 					yield* _(Effect.log(user));
 					return Option.some(user);
 				});
+
+			const resolver = <
+				T extends string,
+				IR,
+				II,
+				IA,
+				AR,
+				AI,
+				A,
+				Q extends PostgrestFilterBuilder<any, any, unknown[]>
+			>(
+				tag: T,
+				options: {
+					readonly request: S.Schema<IA, II, IR>;
+					readonly result: S.Schema<A, AI, AR>;
+					run: (requests: ReadonlyArray<II>) => Q;
+				}
+			) => {
+				const request = Request.tagged<Req<T, A, IA>>(tag);
+				const decodeResult = S.decodeUnknown(options.result);
+				const encodeRequests = S.encode(S.array(options.request));
+
+				const resolver = RequestResolver.makeBatched(
+					(requests: Req<T, A, IA>[]) =>
+						pipe(
+							encodeRequests(requests.map((r) => r.value)),
+							Effect.flatMap(
+								(as) =>
+									Effect.promise((signal) =>
+										options.run(as).abortSignal(signal)
+									) // supply client instance (items, client) => ...
+							),
+							Effect.map((s) => s.data || []),
+							Effect.filterOrFail(
+								(results) => results.length === requests.length,
+								(_) =>
+									ResultLengthMismatch(
+										requests.length,
+										_.length
+									)
+							),
+							Effect.flatMap((results) =>
+								Effect.forEach(results, (result, i) =>
+									pipe(
+										decodeResult(result),
+										Effect.flatMap((result) =>
+											Request.succeed(requests[i], result)
+										),
+										Effect.catchAll((error) =>
+											Request.fail(
+												requests[i],
+												error as any
+											)
+										)
+									)
+								)
+							),
+							Effect.catchAll((error) =>
+								Effect.forEach(
+									requests,
+									(req) => Request.fail(req, error),
+									{
+										discard: true
+									}
+								)
+							)
+						)
+				);
+
+				const execute = (i: IA) =>
+					Effect.request(
+						request({ value: i }),
+						RequestResolver.contextFromEffect(resolver)
+					);
+
+				return { request, resolver, execute };
+			};
 
 			return Supabase.of({
 				client,
