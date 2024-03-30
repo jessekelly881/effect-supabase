@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.4
+
+### Patch Changes
+
+- 720e9f8: updated deps
+
 ## 0.0.3
 
 ### Patch Changes
