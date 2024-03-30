@@ -209,10 +209,7 @@ export const Session: S.Schema<Session, Sb.Session> = _Session;
  * @since 1.0.0
  */
 export interface Req<T, A, IA>
-	extends Request.Request<
-		A,
-		ResultLengthMismatch | ParseResult.ParseError
-	> {
+	extends Request.Request<A, ResultLengthMismatch | ParseResult.ParseError> {
 	readonly value: IA;
 	readonly _tag: T;
 }
@@ -297,8 +294,9 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
-			const client =
-				yield * _(Effect.sync(() => Sb.createClient(...params)));
+			const client = yield* _(
+				Effect.sync(() => Sb.createClient(...params))
+			);
 
 			const decodeUser = S.decodeUnknown(User);
 
@@ -418,11 +416,11 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 
 			return Supabase.of({
 				client,
+				resolver,
 				getUser,
 				signUp,
 				signInWithOAuth,
-				signInWithPassword,
-				resolver
+				signInWithPassword
 			});
 		})
 	);

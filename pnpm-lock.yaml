@@ -12,8 +12,8 @@ dependencies:
     specifier: ^0.64.16
     version: 0.64.16(effect@2.4.15)(fast-check@3.17.0)
   '@supabase/postgrest-js':
-    specifier: ^1.14.0
-    version: 1.14.0
+    specifier: ^1.9.2
+    version: 1.9.2
   '@supabase/supabase-js':
     specifier: ^2.41.1
     version: 2.41.1
@@ -1222,12 +1222,6 @@ packages:
     engines: {node: 4.x || >=6.0.0}
     dependencies:
       whatwg-url: 5.0.0
-    dev: false
-
-  /@supabase/postgrest-js@1.14.0:
-    resolution: {integrity: sha512-bepgdSUup9CMCunbsgQur9+N6+/ZLBCVf3jH6c3mZihZY/k1BSZLladb4UaYmxk/P1i/JbpUiJp3mlJKfXyhxQ==}
-    dependencies:
-      '@supabase/node-fetch': 2.6.15
     dev: false
 
   /@supabase/postgrest-js@1.9.2:
