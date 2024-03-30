@@ -297,9 +297,8 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
-			const client = yield* _(
-				Effect.sync(() => Sb.createClient(...params))
-			);
+			const client =
+				yield * _(Effect.sync(() => Sb.createClient(...params)));
 
 			const decodeUser = S.decodeUnknown(User);
 

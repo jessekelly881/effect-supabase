@@ -9,17 +9,17 @@ dependencies:
     specifier: ^0.1.0
     version: 0.1.0(typescript@5.4.3)
   '@effect/schema':
-    specifier: ^0.64.5
-    version: 0.64.13(effect@2.4.13)(fast-check@3.17.0)
+    specifier: ^0.64.16
+    version: 0.64.16(effect@2.4.15)(fast-check@3.17.0)
   '@supabase/postgrest-js':
     specifier: ^1.14.0
     version: 1.14.0
   '@supabase/supabase-js':
-    specifier: ^2.39.8
-    version: 2.40.0
+    specifier: ^2.41.1
+    version: 2.41.1
   effect:
-    specifier: ^2.4.7
-    version: 2.4.13
+    specifier: ^2.4.15
+    version: 2.4.15
 
 devDependencies:
   '@changesets/cli':
@@ -351,13 +351,13 @@ packages:
       typescript: 5.4.3
     dev: false
 
-  /@effect/schema@0.64.13(effect@2.4.13)(fast-check@3.17.0):
-    resolution: {integrity: sha512-zn1XmoFalnfppza9YAcyOiIQE9caAxL+OuxrlEFTWceBJK8wYKpJyVokS7zeUGVQf8wIDBCOHfapSpSy55pPcQ==}
+  /@effect/schema@0.64.16(effect@2.4.15)(fast-check@3.17.0):
+    resolution: {integrity: sha512-vAidIu1H/lrjqvomJfzTk4+EtlffgJPD8hH8KLIyN4L4TZg3BLPXiqgUhBvhClUd6lfv24u3gnKhE+7W1yn6Sg==}
     peerDependencies:
-      effect: ^2.4.13
+      effect: ^2.4.15
       fast-check: ^3.13.2
     dependencies:
-      effect: 2.4.13
+      effect: 2.4.15
       fast-check: 3.17.0
     dev: false
 
@@ -1205,14 +1205,14 @@ packages:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
 
-  /@supabase/functions-js@2.1.5:
-    resolution: {integrity: sha512-BNzC5XhCzzCaggJ8s53DP+WeHHGT/NfTsx2wUSSGKR2/ikLFQTBCDzMvGz/PxYMqRko/LwncQtKXGOYp1PkPaw==}
+  /@supabase/auth-js@2.63.0:
+    resolution: {integrity: sha512-yIgcHnlgv24GxHtVGUhwGqAFDyJkPIC/xjx7HostN08A8yCy8HIfl4JEkTKyBqD1v1L05jNEJOUke4Lf4O1+Qg==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/gotrue-js@2.62.2:
-    resolution: {integrity: sha512-AP6e6W9rQXFTEJ7sTTNYQrNf0LCcnt1hUW+RIgUK+Uh3jbWvcIST7wAlYyNZiMlS9+PYyymWQ+Ykz/rOYSO0+A==}
+  /@supabase/functions-js@2.2.2:
+    resolution: {integrity: sha512-sJGq1nludmi7pY/fdtCpyY/pYonx7MfHdN408bqb736guWcVI1AChYVbI4kUM978EuOE4Ci6l7bUudfGg07QRw==}
     dependencies:
       '@supabase/node-fetch': 2.6.15
     dev: false
@@ -1254,11 +1254,11 @@ packages:
       '@supabase/node-fetch': 2.6.15
     dev: false
 
-  /@supabase/supabase-js@2.40.0:
-    resolution: {integrity: sha512-XF8OrsA13DYBL074sHH4M0NhXJCWhQ0R5JbVeVUytZ0coPMS9krRdzxl+0c4z4LLjqbm/Wdz0UYlTYM9MgnDag==}
+  /@supabase/supabase-js@2.41.1:
+    resolution: {integrity: sha512-xmECLhYugMo/6SObpsOhu5xaxVfsk+JK/d4JSh055bpESmgmN3PLpzbfqejKCpaUeeUNF21+lrJp/U9HQzT9mA==}
     dependencies:
-      '@supabase/functions-js': 2.1.5
-      '@supabase/gotrue-js': 2.62.2
+      '@supabase/auth-js': 2.63.0
+      '@supabase/functions-js': 2.2.2
       '@supabase/node-fetch': 2.6.15
       '@supabase/postgrest-js': 1.9.2
       '@supabase/realtime-js': 2.9.3
@@ -2554,8 +2554,8 @@ packages:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
     dev: true
 
-  /effect@2.4.13:
-    resolution: {integrity: sha512-QTQgeJOn4S4RdDWHieHc/aaB2sdRLN0zeF+tMEDvGn19tFcZOmqpnSKcYuiGvHaCTE0viexFbBH+iAgfg9Gurw==}
+  /effect@2.4.15:
+    resolution: {integrity: sha512-fwOeADUSbmlvbNpAlUlNhuCPHN08VKt53YbtSzNe9aZK3CclVJdq2gPgo1TCaGQsJpPf42xw7QrrTBQiH94few==}
     dev: false
 
   /emoji-regex@10.3.0:
