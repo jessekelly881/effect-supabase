@@ -32,6 +32,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@effect/docgen": "^0.4.0",
+    "@effect/vitest": "^0.2.3",
     "@fast-check/vitest": "^0.1.0",
     "@types/node": "^20.11.28",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
@@ -51,6 +52,7 @@
   },
   "dependencies": {
     "@effect/dtslint": "^0.1.0",
+    "@effect/platform": "^0.48.22",
     "@effect/schema": "^0.64.16",
     "@supabase/postgrest-js": "^1.9.2",
     "@supabase/supabase-js": "^2.41.1",

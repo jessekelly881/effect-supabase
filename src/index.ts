@@ -5,6 +5,7 @@
 import * as Sb from "@supabase/supabase-js";
 import { Schema as S, ParseResult } from "@effect/schema";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
+import { Fetch } from "@effect/platform/Http/Client";
 import {
 	Effect,
 	Option,
@@ -12,8 +13,11 @@ import {
 	Data,
 	Request,
 	RequestResolver,
-	pipe
+	pipe,
+	Config,
+	Secret
 } from "effect";
+
 /**
  * @since 1.0.0
  */
@@ -223,7 +227,7 @@ export class Supabase extends Effect.Tag("Supabase")<
 		/**
 		 * @since 1.0.0
 		 */
-		client: Sb.SupabaseClient<any, never, any>;
+		client: Sb.SupabaseClient<any, any, any>;
 
 		/**
 		 * @since 1.0.0
@@ -290,12 +294,28 @@ export class Supabase extends Effect.Tag("Supabase")<
 /**
  * @since 1.0.0
  */
-export const layer = (...params: Parameters<typeof Sb.createClient>) =>
+export const layer = (
+	supabaseUrl: Config.Config<string>,
+	supabaseKey: Config.Config<Secret.Secret>
+) =>
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
+			const [url, key] =
+				yield * _(Config.all([supabaseUrl, supabaseKey]));
+
+			const fetch = (yield * _(Effect.serviceOption(Fetch))).pipe(
+				Option.getOrUndefined
+			);
+
 			const client = yield* _(
-				Effect.sync(() => Sb.createClient(...params))
+				Effect.sync(() =>
+					Sb.createClient(url, Secret.value(key), {
+						global: {
+							fetch
+						}
+					})
+				)
 			);
 
 			const decodeUser = S.decodeUnknown(User);
@@ -414,9 +434,75 @@ export const layer = (...params: Parameters<typeof Sb.createClient>) =>
 				return { request, resolver, execute };
 			};
 
+			const resolverVoid = <
+				T extends string,
+				IR,
+				II,
+				IA,
+				A,
+				Q extends PostgrestFilterBuilder<any, any, void>
+			>(
+				tag: T,
+				options: {
+					readonly request: S.Schema<IA, II, IR>;
+					run: (requests: ReadonlyArray<II>) => Q;
+				}
+			) => {
+				const request = Request.tagged<Req<T, A, IA>>(tag);
+				const encodeRequests = S.encode(S.array(options.request));
+
+				const resolver = RequestResolver.makeBatched(
+					(requests: Req<T, A, IA>[]) =>
+						pipe(
+							encodeRequests(requests.map((r) => r.value)),
+							Effect.flatMap(
+								(as) =>
+									Effect.promise((signal) =>
+										options.run(as).abortSignal(signal)
+									) // supply client instance (items, client) => ...
+							),
+							Effect.map((s) => s.data || []),
+							Effect.filterOrFail(
+								(results) => results.length === requests.length,
+								(_) =>
+									ResultLengthMismatch(
+										requests.length,
+										_.length
+									)
+							),
+							Effect.zipRight(
+								Effect.forEach(
+									requests,
+									(req) =>
+										Request.succeed(req, void 0 as any),
+									{ discard: true }
+								)
+							),
+							Effect.catchAll((error) =>
+								Effect.forEach(
+									requests,
+									(req) => Request.fail(req, error),
+									{
+										discard: true
+									}
+								)
+							)
+						)
+				);
+
+				const execute = (i: IA) =>
+					Effect.request(
+						request({ value: i }),
+						RequestResolver.contextFromEffect(resolver)
+					);
+
+				return { request, resolver, execute };
+			};
+
 			return Supabase.of({
 				client,
 				resolver,
+				resolverVoid,
 				getUser,
 				signUp,
 				signInWithOAuth,
