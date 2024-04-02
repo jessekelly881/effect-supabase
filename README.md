@@ -21,7 +21,7 @@ export const getEventById = (id: EventId) =>
     sb.resolver("getEventById", {
         result: Event,
         request: EventId,
-	run: (ids) => sb.client.from("events").select("*").in("id", ids) as any
+	run: (ids) => sb.client.from("events").select("*").in("id", ids)
     }).execute(id)
   ).pipe(Effect.withSpan("getEventById", { attributes: { id } }));
 ```
