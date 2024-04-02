@@ -17,9 +17,14 @@ Added in v1.0.0
   - [AppMetadata (interface)](#appmetadata-interface)
   - [Factor](#factor)
   - [Factor (interface)](#factor-interface)
+  - [Req (interface)](#req-interface)
+  - [ResultLengthMismatch](#resultlengthmismatch)
+  - [ResultLengthMismatch (interface)](#resultlengthmismatch-interface)
   - [Session](#session)
   - [Session (interface)](#session-interface)
   - [Supabase (class)](#supabase-class)
+  - [SupabaseErrorId](#supabaseerrorid)
+  - [SupabaseErrorId (type alias)](#supabaseerrorid-type-alias)
   - [User](#user)
   - [User (interface)](#user-interface)
   - [UserId](#userid)
@@ -73,6 +78,45 @@ export interface Factor extends S.Schema.Type<typeof _Factor> {}
 
 Added in v1.0.0
 
+## Req (interface)
+
+**Signature**
+
+```ts
+export interface Req<T, A, IA>
+  extends Request.Request<A, ResultLengthMismatch | ParseResult.ParseError | Sb.PostgrestError> {
+  readonly value: IA
+  readonly _tag: T
+}
+```
+
+Added in v1.0.0
+
+## ResultLengthMismatch
+
+**Signature**
+
+```ts
+export declare const ResultLengthMismatch: (expected: number, actual: number) => ResultLengthMismatch
+```
+
+Added in v1.0.0
+
+## ResultLengthMismatch (interface)
+
+**Signature**
+
+```ts
+export interface ResultLengthMismatch {
+  readonly [SupabaseErrorId]: SupabaseErrorId
+  readonly _tag: "ResultLengthMismatch"
+  readonly expected: number
+  readonly actual: number
+}
+```
+
+Added in v1.0.0
+
 ## Session
 
 **Signature**
@@ -99,6 +143,26 @@ Added in v1.0.0
 
 ```ts
 export declare class Supabase
+```
+
+Added in v1.0.0
+
+## SupabaseErrorId
+
+**Signature**
+
+```ts
+export declare const SupabaseErrorId: typeof SupabaseErrorId
+```
+
+Added in v1.0.0
+
+## SupabaseErrorId (type alias)
+
+**Signature**
+
+```ts
+export type SupabaseErrorId = typeof SupabaseErrorId
 ```
 
 Added in v1.0.0
@@ -179,10 +243,9 @@ Added in v1.0.0
 
 ```ts
 export declare const layer: (
-  supabaseUrl: string,
-  supabaseKey: string,
-  options?: Sb.SupabaseClientOptions<never> | undefined
-) => Layer.Layer<Supabase, never, never>
+  supabaseUrl: Config.Config<string>,
+  supabaseKey: Config.Config<Secret.Secret>
+) => Layer.Layer<Supabase, ConfigError, never>
 ```
 
 Added in v1.0.0
