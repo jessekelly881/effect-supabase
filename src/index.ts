@@ -1,7 +1,6 @@
 /**
  * @since 1.0.0
  */
-
 import * as Sb from "@supabase/supabase-js";
 import { Schema as S, ParseResult } from "@effect/schema";
 import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
@@ -213,7 +212,10 @@ export const Session: S.Schema<Session, Sb.Session> = _Session;
  * @since 1.0.0
  */
 export interface Req<T, A, IA>
-	extends Request.Request<A, ResultLengthMismatch | ParseResult.ParseError> {
+	extends Request.Request<
+		A,
+		ResultLengthMismatch | ParseResult.ParseError | Sb.PostgrestError
+	> {
 	readonly value: IA;
 	readonly _tag: T;
 }
@@ -255,8 +257,36 @@ export class Supabase extends Effect.Tag("Supabase")<
 				i: IA
 			) => Effect.Effect<
 				A,
-				ParseResult.ParseError | ResultLengthMismatch,
+				| ParseResult.ParseError
+				| ResultLengthMismatch
+				| Sb.PostgrestError,
 				IR | AR
+			>;
+		};
+
+		resolverVoid: <
+			T extends string,
+			IR,
+			II,
+			IA,
+			Q extends PostgrestFilterBuilder<any, any, void>
+		>(
+			tag: T,
+			options: {
+				readonly request: S.Schema<IA, II, IR>;
+				run: (requests: ReadonlyArray<II>) => Q;
+			}
+		) => {
+			request: Request.Request.Constructor<Req<T, void, IA>, "_tag">;
+			resolver: RequestResolver.RequestResolver<Req<T, void, IA>, IR>;
+			execute: (
+				i: IA
+			) => Effect.Effect<
+				void,
+				| ParseResult.ParseError
+				| ResultLengthMismatch
+				| Sb.PostgrestError,
+				IR
 			>;
 		};
 
@@ -308,15 +338,17 @@ export const layer = (
 				Option.getOrUndefined
 			);
 
-			const client = yield* _(
-				Effect.sync(() =>
-					Sb.createClient(url, Secret.value(key), {
-						global: {
-							fetch
-						}
-					})
-				)
-			);
+			const client =
+				yield *
+				_(
+					Effect.sync(() =>
+						Sb.createClient(url, Secret.value(key), {
+							global: {
+								fetch
+							}
+						})
+					)
+				);
 
 			const decodeUser = S.decodeUnknown(User);
 
@@ -388,7 +420,11 @@ export const layer = (
 										options.run(as).abortSignal(signal)
 									) // supply client instance (items, client) => ...
 							),
-							Effect.map((s) => s.data || []),
+							Effect.flatMap((s) =>
+								s.error
+									? Effect.fail(s.error)
+									: Effect.succeed(s.data || [])
+							),
 							Effect.filterOrFail(
 								(results) => results.length === requests.length,
 								(_) =>
@@ -439,7 +475,6 @@ export const layer = (
 				IR,
 				II,
 				IA,
-				A,
 				Q extends PostgrestFilterBuilder<any, any, void>
 			>(
 				tag: T,
@@ -448,11 +483,11 @@ export const layer = (
 					run: (requests: ReadonlyArray<II>) => Q;
 				}
 			) => {
-				const request = Request.tagged<Req<T, A, IA>>(tag);
+				const request = Request.tagged<Req<T, void, IA>>(tag);
 				const encodeRequests = S.encode(S.array(options.request));
 
 				const resolver = RequestResolver.makeBatched(
-					(requests: Req<T, A, IA>[]) =>
+					(requests: Req<T, void, IA>[]) =>
 						pipe(
 							encodeRequests(requests.map((r) => r.value)),
 							Effect.flatMap(
