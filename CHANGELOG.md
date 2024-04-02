@@ -1,5 +1,12 @@
 # @kellyjesse881/empty
 
+## 0.0.5
+
+### Patch Changes
+
+- b489fcb: added Fetch injection
+- b489fcb: added resolverVoid
+
 ## 0.0.4
 
 ### Patch Changes
