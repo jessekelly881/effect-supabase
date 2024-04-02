@@ -17,17 +17,11 @@ const Event = Schema.struct({
 });
 
 export const getEventById = (id: EventId) =>
-	Effect.flatMap(Supabase, (sb) =>
-		sb
-			.resolver("getEventById", {
-				result: Event,
-				request: EventId,
-				run: (ids) =>
-					sb.client
-						.from("events")
-						.select("*")
-						.in("id", ids) as any
-			})
-			.execute(id)
-	).pipe(Effect.withSpan("getEventById", { attributes: { id } }));
+  Effect.flatMap(Supabase, (sb) =>
+    sb.resolver("getEventById", {
+        result: Event,
+        request: EventId,
+	run: (ids) => sb.client.from("events").select("*").in("id", ids) as any
+    }).execute(id)
+  ).pipe(Effect.withSpan("getEventById", { attributes: { id } }));
 ```
