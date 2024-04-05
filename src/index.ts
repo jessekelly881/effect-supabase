@@ -16,6 +16,7 @@ import {
 	Config,
 	Secret
 } from "effect";
+import { ParseError } from "@effect/schema/ParseResult";
 
 /**
  * @since 1.0.0
@@ -223,6 +224,15 @@ export interface Req<T, A, IA>
 /**
  * @since 1.0.0
  */
+export interface Resolver<T extends string, A, I, E, R> {
+	readonly request: Request.Request.Constructor<Req<T, A, I>, "_tag">;
+	readonly resolver: RequestResolver.RequestResolver<Req<T, A, I>, R>;
+	readonly execute: (_: I) => Effect.Effect<A, ParseError | E, R>;
+}
+
+/**
+ * @since 1.0.0
+ */
 export class Supabase extends Effect.Tag("Supabase")<
 	Supabase,
 	{
@@ -250,19 +260,13 @@ export class Supabase extends Effect.Tag("Supabase")<
 				readonly result: S.Schema<A, AI, AR>;
 				run: (requests: ReadonlyArray<II>) => Q;
 			}
-		) => {
-			request: Request.Request.Constructor<Req<T, A, IA>, "_tag">;
-			resolver: RequestResolver.RequestResolver<Req<T, A, IA>, IR | AR>;
-			execute: (
-				i: IA
-			) => Effect.Effect<
-				A,
-				| ParseResult.ParseError
-				| ResultLengthMismatch
-				| Sb.PostgrestError,
-				IR | AR
-			>;
-		};
+		) => Resolver<
+			T,
+			A,
+			IA,
+			ResultLengthMismatch | Sb.PostgrestError,
+			IR | AR
+		>;
 
 		resolverVoid: <
 			T extends string,
@@ -276,19 +280,13 @@ export class Supabase extends Effect.Tag("Supabase")<
 				readonly request: S.Schema<IA, II, IR>;
 				run: (requests: ReadonlyArray<II>) => Q;
 			}
-		) => {
-			request: Request.Request.Constructor<Req<T, void, IA>, "_tag">;
-			resolver: RequestResolver.RequestResolver<Req<T, void, IA>, IR>;
-			execute: (
-				i: IA
-			) => Effect.Effect<
-				void,
-				| ParseResult.ParseError
-				| ResultLengthMismatch
-				| Sb.PostgrestError,
-				IR
-			>;
-		};
+		) => Resolver<
+			T,
+			void,
+			IA,
+			ResultLengthMismatch | Sb.PostgrestError,
+			IR
+		>;
 
 		/**
 		 * @since 1.0.0
