@@ -14,7 +14,8 @@ import {
 	RequestResolver,
 	pipe,
 	Config,
-	Secret
+	Secret,
+	Cause
 } from "effect";
 import { ParseError } from "@effect/schema/ParseResult";
 
@@ -244,6 +245,38 @@ export class Supabase extends Effect.Tag("Supabase")<
 		/**
 		 * @since 1.0.0
 		 */
+		schema<
+			A,
+			AI,
+			AR,
+			IA,
+			II,
+			IR,
+			Q extends PostgrestFilterBuilder<any, any, unknown>
+		>(options: {
+			request: S.Schema<IA, II, IR>;
+			result: S.Schema<A, AI, AR>;
+			run: (_: II) => Q;
+		}): (
+			_: IA
+		) => Effect.Effect<ReadonlyArray<A>, ParseResult.ParseError, IR | AR>;
+
+		/**
+		 * @since 1.0.0
+		 */
+		schemaVoid<
+			IA,
+			II,
+			IR,
+			Q extends PostgrestFilterBuilder<any, any, unknown>
+		>(options: {
+			request: S.Schema<IA, II, IR>;
+			run: (_: II) => Q;
+		}): (_: IA) => Effect.Effect<void, ParseResult.ParseError, IR>;
+
+		/**
+		 * @since 1.0.0
+		 */
 		resolver: <
 			T extends string,
 			IR,
@@ -348,6 +381,23 @@ export const layer = (
 					)
 				);
 
+			const query =
+				<A>() =>
+				<Q extends PostgrestFilterBuilder<any, any, A>>(
+					q: () => Q
+				): Effect.Effect<A, Sb.PostgrestError> =>
+					Effect.promise((signal) => q().abortSignal(signal)).pipe(
+						Effect.flatMap((res) =>
+							res.data
+								? Effect.succeed(res.data)
+								: res.error
+									? Effect.fail(res.error)
+									: Effect.die(
+											new Cause.UnknownException(res)
+										)
+						)
+					);
+
 			const decodeUser = S.decodeUnknown(User);
 
 			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
@@ -412,16 +462,8 @@ export const layer = (
 					(requests: Req<T, A, IA>[]) =>
 						pipe(
 							encodeRequests(requests.map((r) => r.value)),
-							Effect.flatMap(
-								(as) =>
-									Effect.promise((signal) =>
-										options.run(as).abortSignal(signal)
-									) // supply client instance (items, client) => ...
-							),
-							Effect.flatMap((s) =>
-								s.error
-									? Effect.fail(s.error)
-									: Effect.succeed(s.data || [])
+							Effect.flatMap((as) =>
+								query<unknown[]>()(() => options.run(as))
 							),
 							Effect.filterOrFail(
 								(results) => results.length === requests.length,
@@ -488,13 +530,9 @@ export const layer = (
 					(requests: Req<T, void, IA>[]) =>
 						pipe(
 							encodeRequests(requests.map((r) => r.value)),
-							Effect.flatMap(
-								(as) =>
-									Effect.promise((signal) =>
-										options.run(as).abortSignal(signal)
-									) // supply client instance (items, client) => ...
+							Effect.flatMap((as) =>
+								query<unknown[]>()(() => options.run(as) as any)
 							),
-							Effect.map((s) => s.data || []),
 							Effect.filterOrFail(
 								(results) => results.length === requests.length,
 								(_) =>
@@ -532,8 +570,55 @@ export const layer = (
 				return { request, resolver, execute };
 			};
 
+			function schema<
+				A,
+				AI,
+				AR,
+				IA,
+				II,
+				IR,
+				Q extends PostgrestFilterBuilder<any, any, unknown>
+			>(options: {
+				request: S.Schema<IA, II, IR>;
+				result: S.Schema<A, AI, AR>;
+				run: (_: II) => Q;
+			}) {
+				const decodeResult = S.decodeUnknown(S.array(options.result));
+				const encodeRequest = S.encode(options.request);
+
+				return (_: IA) =>
+					pipe(
+						encodeRequest(_),
+						Effect.flatMap((as) =>
+							Effect.promise((signal) =>
+								options.run(as).abortSignal(signal)
+							).pipe(Effect.map((res) => res.data))
+						),
+						Effect.flatMap(decodeResult)
+					);
+			}
+
+			function schemaVoid<
+				IA,
+				II,
+				IR,
+				Q extends PostgrestFilterBuilder<any, any, unknown>
+			>(options: { request: S.Schema<IA, II, IR>; run: (_: II) => Q }) {
+				const encodeRequest = S.encode(options.request);
+				return (_: IA) =>
+					Effect.asUnit(
+						Effect.flatMap(encodeRequest(_), (as) =>
+							Effect.promise((signal) =>
+								options.run(as).abortSignal(signal)
+							)
+						)
+					);
+			}
+
 			return Supabase.of({
 				client,
+				schema,
+				schemaVoid,
 				resolver,
 				resolverVoid,
 				getUser,
