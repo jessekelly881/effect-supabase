@@ -14,17 +14,16 @@ describe("Supabase", () => {
 	it.effect("Fetch injection", (ctx) => {
 		const mockFetch: typeof fetch = vi.fn();
 		return Effect.gen(function* (_) {
-			const sb = yield* _(Supabase.Supabase);
-			yield* _(
-				sb
-					.resolver("tag", {
+			const sb = yield * _(Supabase.Supabase);
+			yield *
+				_(
+					Supabase.resolver("tag", {
 						request: Schema.void,
 						result: Schema.void,
 						run: () => sb.client.from("a").select()
-					})
-					.execute(),
-				Effect.catchAll(() => Effect.unit)
-			);
+					}).execute(),
+					Effect.catchAll(() => Effect.unit)
+				);
 			ctx.expect(mockFetch).toHaveBeenCalledOnce();
 		}).pipe(
 			Effect.provide(mockSupabaseLayer),
