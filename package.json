@@ -9,10 +9,21 @@
   "types": "./dist/index.d.ts",
   "homepage": "",
   "tags": [
-    "typescript"
+    "typescript",
+    "effect",
+    "effect-ts",
+    "supabase",
+    "supabase-js",
+    "supabase-db"
   ],
   "keywords": [
-    "typescript"
+    "typescript",
+    "effect",
+    "effect-ts",
+    "supabase",
+    "supabase-js",
+    "supabase-db"
+
   ],
   "scripts": {
     "build": "tsup src/**/*.ts --format cjs,esm --dts",
