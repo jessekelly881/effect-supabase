@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.7
+
+### Patch Changes
+
+- 126df3b: removed resolvers from service def
+
 ## 0.0.6
 
 ### Patch Changes
