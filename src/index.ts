@@ -213,6 +213,18 @@ export const Session: S.Schema<Session, Sb.Session> = _Session;
 /**
  * @since 1.0.0
  */
+export class StorageObject extends S.Class<StorageObject>("Storage.Object")( // TODO: namespace Storage, Public
+	{
+		id: S.UUID,
+		bucketId: S.string.pipe(ps, S.fromKey("bucket_id")),
+		name: S.string,
+		// TODO: Add missing fields
+	}
+) {}
+
+/**
+ * @since 1.0.0
+ */
 export interface Req<T, A, IA>
 	extends Request.Request<
 		A,
@@ -252,6 +264,9 @@ export const wrapQuery =
 			)
 		);
 
+/**
+ * @since 1.0.0
+ */
 export const resolverId = <
 	T extends string,
 	A,
