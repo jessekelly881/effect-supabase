@@ -14,8 +14,7 @@ import {
 	RequestResolver,
 	pipe,
 	Config,
-	Secret,
-	Cause
+	Secret
 } from "effect";
 import { ParseError } from "@effect/schema/ParseResult";
 import { DurationInput } from "effect/Duration";
@@ -53,7 +52,7 @@ export interface ResultLengthMismatch {
 const ps = S.propertySignature;
 
 /** @internal */
-const TimeStamped = S.struct({
+const TimeStamped = S.Struct({
 	createdAt: S.Date.pipe(ps, S.fromKey("created_at")),
 	updatedAt: S.Date.pipe(ps, S.fromKey("updated_at"))
 });
@@ -69,9 +68,9 @@ export const UserId = S.UUID.pipe(S.brand("UserId"));
 export type UserId = S.Schema.Type<typeof UserId>;
 
 /** @internal */
-const _AppMetadata = S.struct(
-	{ provider: S.optional(S.string) },
-	S.record(S.string, S.unknown)
+const _AppMetadata = S.Struct(
+	{ provider: S.optional(S.String) },
+	S.Record(S.String, S.Unknown)
 );
 
 /**
@@ -86,7 +85,7 @@ export const AppMetadata: S.Schema<AppMetadata, Sb.UserAppMetadata> =
 	_AppMetadata;
 
 /** @internal */
-const _UserMetadata = S.record(S.string, S.unknown) satisfies S.Schema<
+const _UserMetadata = S.Record(S.String, S.Unknown) satisfies S.Schema<
 	any,
 	Sb.UserMetadata
 >;
@@ -103,15 +102,15 @@ export const UserMetadata: S.Schema<UserMetadata, Sb.UserMetadata> =
 	_UserMetadata;
 
 /** @internal */
-const _UserIdentity = S.struct({
-	id: S.string,
+const _UserIdentity = S.Struct({
+	id: S.String,
 	userId: UserId.pipe(ps, S.fromKey("user_id")),
-	identityData: S.optional(S.record(S.string, S.unknown)).pipe(
+	identityData: S.optional(S.Record(S.String, S.Unknown)).pipe(
 		S.fromKey("identity_data")
 	),
-	identityId: S.string.pipe(ps, S.fromKey("identity_id")),
-	provider: S.string,
-	lastSignInAt: S.optional(S.string).pipe(S.fromKey("last_sign_in_at")),
+	identityId: S.String.pipe(ps, S.fromKey("identity_id")),
+	provider: S.String,
+	lastSignInAt: S.optional(S.String).pipe(S.fromKey("last_sign_in_at")),
 	createdAt: S.optional(S.Date).pipe(S.fromKey("created_at")),
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
 });
@@ -128,11 +127,11 @@ export const UserIdentity: S.Schema<UserIdentity, Sb.UserIdentity> =
 	_UserIdentity;
 
 /** @internal */
-const _Factor = S.struct({
-	id: S.string,
-	friendlyName: S.optional(S.string).pipe(S.fromKey("friendly_name")),
-	factorType: S.string.pipe(ps, S.fromKey("factor_type")),
-	status: S.literal("verified", "unverified"),
+const _Factor = S.Struct({
+	id: S.String,
+	friendlyName: S.optional(S.String).pipe(S.fromKey("friendly_name")),
+	factorType: S.String.pipe(ps, S.fromKey("factor_type")),
+	status: S.Literal("verified", "unverified"),
 	...TimeStamped.fields
 });
 
@@ -147,11 +146,11 @@ export interface Factor extends S.Schema.Type<typeof _Factor> {}
 export const Factor: S.Schema<Factor, Sb.Factor> = _Factor;
 
 /** @internal */
-const _User = S.struct({
+const _User = S.Struct({
 	id: UserId,
 	appMetadata: AppMetadata.pipe(ps, S.fromKey("app_metadata")),
 	userMetadata: UserMetadata.pipe(ps, S.fromKey("user_metadata")),
-	aud: S.string,
+	aud: S.String,
 
 	confirmationSentAt: S.optional(S.Date).pipe(
 		S.fromKey("confirmation_sent_at")
@@ -160,21 +159,21 @@ const _User = S.struct({
 	emailChangeSentAt: S.optional(S.Date).pipe(
 		S.fromKey("email_change_sent_at")
 	),
-	newEmail: S.optional(S.string).pipe(S.fromKey("new_email")),
-	newPhone: S.optional(S.string).pipe(S.fromKey("new_phone")),
-	invitedAt: S.optional(S.string).pipe(S.fromKey("invited_at")),
-	actionLink: S.optional(S.string).pipe(S.fromKey("action_link")),
-	email: S.optional(S.string),
-	phone: S.optional(S.string),
+	newEmail: S.optional(S.String).pipe(S.fromKey("new_email")),
+	newPhone: S.optional(S.String).pipe(S.fromKey("new_phone")),
+	invitedAt: S.optional(S.String).pipe(S.fromKey("invited_at")),
+	actionLink: S.optional(S.String).pipe(S.fromKey("action_link")),
+	email: S.optional(S.String),
+	phone: S.optional(S.String),
 	confirmedAt: S.optional(S.Date).pipe(S.fromKey("confirmed_at")),
 	emailConfirmedAt: S.optional(S.Date).pipe(S.fromKey("email_confirmed_at")),
-	phoneConfirmedAt: S.optional(S.string).pipe(
+	phoneConfirmedAt: S.optional(S.String).pipe(
 		S.fromKey("phone_confirmed_at")
 	),
 	lastSignInAt: S.optional(S.Date).pipe(S.fromKey("last_sign_in_at")),
-	role: S.optional(S.string),
-	identities: S.optional(S.array(UserIdentity).pipe(S.mutable)),
-	factors: S.optional(S.array(Factor).pipe(S.mutable)),
+	role: S.optional(S.String),
+	identities: S.optional(S.Array(UserIdentity).pipe(S.mutable)),
+	factors: S.optional(S.Array(Factor).pipe(S.mutable)),
 
 	createdAt: S.Date.pipe(ps, S.fromKey("created_at")),
 	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
@@ -191,18 +190,18 @@ export interface User extends S.Schema.Type<typeof _User> {}
 export const User: S.Schema<User, Sb.User> = _User;
 
 /** @internal */
-const _Session = S.struct({
-	providerToken: S.optional(S.string, { nullable: true }).pipe(
+const _Session = S.Struct({
+	providerToken: S.optional(S.String, { nullable: true }).pipe(
 		S.fromKey("provider_token")
 	),
-	providerRefreshToken: S.optional(S.string, { nullable: true }).pipe(
+	providerRefreshToken: S.optional(S.String, { nullable: true }).pipe(
 		S.fromKey("provider_refresh_token")
 	),
-	accessToken: S.string.pipe(ps, S.fromKey("access_token")),
-	refreshToken: S.string.pipe(ps, S.fromKey("refresh_token")),
-	expiresIn: S.number.pipe(ps, S.fromKey("expires_in")),
-	expiresAt: S.optional(S.number).pipe(S.fromKey("expires_at")),
-	tokenType: S.string.pipe(ps, S.fromKey("token_type")),
+	accessToken: S.String.pipe(ps, S.fromKey("access_token")),
+	refreshToken: S.String.pipe(ps, S.fromKey("refresh_token")),
+	expiresIn: S.Number.pipe(ps, S.fromKey("expires_in")),
+	expiresAt: S.optional(S.Number).pipe(S.fromKey("expires_at")),
+	tokenType: S.String.pipe(ps, S.fromKey("token_type")),
 	user: User
 });
 
@@ -223,8 +222,8 @@ export class StorageObject extends S.Class<StorageObject>("Storage.Object")(
 	// TODO: namespace Storage, Public
 	{
 		id: S.UUID,
-		bucketId: S.string.pipe(ps, S.fromKey("bucket_id")),
-		name: S.string
+		bucketId: S.String.pipe(ps, S.fromKey("bucket_id")),
+		name: S.String
 		// TODO: Add missing fields
 	}
 ) {}
@@ -289,8 +288,8 @@ export const resolverId = <
 	}
 ) => {
 	const request = Request.tagged<Req<T, Option.Option<A>, IA>>(tag);
-	const encodeRequests = S.encode(S.array(options.id));
-	const decodeResults = S.decodeUnknown(S.array(options.result));
+	const encodeRequests = S.encode(S.Array(options.id));
+	const decodeResults = S.decodeUnknown(S.Array(options.result));
 
 	const resolver = RequestResolver.makeBatched(
 		(requests: ReadonlyArray<Req<T, Option.Option<A>, IA>>) =>
@@ -367,7 +366,7 @@ export const resolver = <
 ): Resolver<T, A, IA, ResultLengthMismatch | Sb.PostgrestError, IR | AR> => {
 	const request = Request.tagged<Req<T, A, IA>>(tag);
 	const decodeResult = S.decodeUnknown(options.result);
-	const encodeRequests = S.encode(S.array(options.request));
+	const encodeRequests = S.encode(S.Array(options.request));
 
 	const resolver = RequestResolver.makeBatched((requests: Req<T, A, IA>[]) =>
 		pipe(
@@ -426,7 +425,7 @@ export const resolverVoid = <
 	}
 ): Resolver<T, void, IA, ResultLengthMismatch | Sb.PostgrestError, IR> => {
 	const request = Request.tagged<Req<T, void, IA>>(tag);
-	const encodeRequests = S.encode(S.array(options.request));
+	const encodeRequests = S.encode(S.Array(options.request));
 
 	const resolver = RequestResolver.makeBatched(
 		(requests: Req<T, void, IA>[]) =>
@@ -528,7 +527,7 @@ export function schema<
 }): (
 	_: IA
 ) => Effect.Effect<ReadonlyArray<A>, ParseResult.ParseError, IR | AR> {
-	const decodeResult = S.decodeUnknown(S.array(options.result));
+	const decodeResult = S.decodeUnknown(S.Array(options.result));
 	const encodeRequest = S.encode(options.request);
 
 	return (_: IA) =>
@@ -557,7 +556,7 @@ export function schemaVoid<
 }): (_: IA) => Effect.Effect<void, ParseResult.ParseError, IR> {
 	const encodeRequest = S.encode(options.request);
 	return (_: IA) =>
-		Effect.asUnit(
+		Effect.asVoid(
 			Effect.flatMap(encodeRequest(_), (as) =>
 				Effect.promise((signal) => options.run(as).abortSignal(signal))
 			)

@@ -30,6 +30,7 @@ Added in v1.0.0
   - [User](#user)
   - [User (interface)](#user-interface)
   - [UserId](#userid)
+  - [UserId (type alias)](#userid-type-alias)
   - [UserIdentity](#useridentity)
   - [UserIdentity (interface)](#useridentity-interface)
   - [UserMetadata](#usermetadata)
@@ -225,7 +226,17 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const UserId: S.brand<S.$string, "UserId">
+export declare const UserId: S.brand<S.$String, "UserId">
+```
+
+Added in v1.0.0
+
+## UserId (type alias)
+
+**Signature**
+
+```ts
+export type UserId = S.Schema.Type<typeof UserId>
 ```
 
 Added in v1.0.0
@@ -277,7 +288,8 @@ Added in v1.0.0
 ```ts
 export declare const layer: (
   supabaseUrl: Config.Config<string>,
-  supabaseKey: Config.Config<Secret.Secret>
+  supabaseKey: Config.Config<Secret.Secret>,
+  userCache?: DurationInput
 ) => Layer.Layer<Supabase, ConfigError, never>
 ```
 
@@ -336,7 +348,11 @@ export declare const resolverId: <
   resolver: RequestResolver.RequestResolver<Req<T, Option.Option<A>, IA>, AR | IR>
   execute: (
     i: IA
-  ) => Effect.Effect<Option.Option<A>, ResultLengthMismatch | Sb.PostgrestError | ParseResult.ParseError, AR | IR>
+  ) => Effect.Effect<
+    Option.Option<A>,
+    ResultLengthMismatch | Sb.PostgrestError | ParseResult.ParseError,
+    Exclude<AR, ParentSpan> | Exclude<IR, ParentSpan>
+  >
 }
 ```
 
@@ -366,7 +382,13 @@ export declare const resolverSingle: <
 ) => {
   request: Request.Request.Constructor<Req<T, A, IA>, "_tag">
   resolver: RequestResolver.RequestResolver<Req<T, A, IA>, AR | IR>
-  execute: (i: IA) => Effect.Effect<A, ResultLengthMismatch | Sb.PostgrestError | ParseResult.ParseError, AR | IR>
+  execute: (
+    i: IA
+  ) => Effect.Effect<
+    A,
+    ResultLengthMismatch | Sb.PostgrestError | ParseResult.ParseError,
+    Exclude<AR, ParentSpan> | Exclude<IR, ParentSpan>
+  >
 }
 ```
 

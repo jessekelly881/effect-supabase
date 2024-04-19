@@ -4,7 +4,7 @@
     "strict": true,
     "noEmit": true,
     "target": "ES2016",
-    "module": "commonjs",
+    "module": "CommonJS",
     "noImplicitAny": true,
     "removeComments": true,
     "moduleResolution": "node",
