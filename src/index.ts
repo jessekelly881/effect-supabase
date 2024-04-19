@@ -18,6 +18,7 @@ import {
 	Cause
 } from "effect";
 import { ParseError } from "@effect/schema/ParseResult";
+import { DurationInput } from "effect/Duration";
 
 /**
  * @since 1.0.0
@@ -61,6 +62,11 @@ const TimeStamped = S.struct({
  * @since 1.0.0
  */
 export const UserId = S.UUID.pipe(S.brand("UserId"));
+
+/**
+ * @since 1.0.0
+ */
+export type UserId = S.Schema.Type<typeof UserId>;
 
 /** @internal */
 const _AppMetadata = S.struct(
@@ -213,11 +219,12 @@ export const Session: S.Schema<Session, Sb.Session> = _Session;
 /**
  * @since 1.0.0
  */
-export class StorageObject extends S.Class<StorageObject>("Storage.Object")( // TODO: namespace Storage, Public
+export class StorageObject extends S.Class<StorageObject>("Storage.Object")(
+	// TODO: namespace Storage, Public
 	{
 		id: S.UUID,
 		bucketId: S.string.pipe(ps, S.fromKey("bucket_id")),
-		name: S.string,
+		name: S.string
 		// TODO: Add missing fields
 	}
 ) {}
@@ -256,11 +263,7 @@ export const wrapQuery =
 	): Effect.Effect<A, Sb.PostgrestError> =>
 		Effect.promise((signal) => q().abortSignal(signal)).pipe(
 			Effect.flatMap((res) =>
-				res.data
-					? Effect.succeed(res.data)
-					: res.error
-						? Effect.fail(res.error)
-						: Effect.die(new Cause.UnknownException(res))
+				res.error ? Effect.fail(res.error) : Effect.succeed(res.data)
 			)
 		);
 
@@ -337,7 +340,7 @@ export const resolverId = <
 		Effect.request(
 			request({ value: i }),
 			RequestResolver.contextFromEffect(resolver)
-		);
+		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
 };
@@ -401,7 +404,7 @@ export const resolver = <
 		Effect.request(
 			request({ value: i }),
 			RequestResolver.contextFromEffect(resolver)
-		);
+		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
 };
@@ -459,7 +462,7 @@ export const resolverVoid = <
 		Effect.request(
 			request({ value: i }),
 			RequestResolver.contextFromEffect(resolver)
-		);
+		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
 };
@@ -502,7 +505,7 @@ export const resolverSingle = <
 		Effect.request(
 			request({ value: i }),
 			RequestResolver.contextFromEffect(resolver)
-		);
+		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
 };
@@ -594,12 +597,16 @@ export class Supabase extends Effect.Tag("Supabase")<
 		) => Effect.Effect<Sb.AuthTokenResponsePassword>;
 
 		/**
+		 * Gets the current user.
 		 * @since 1.0.0
 		 */
-		getUser: () => Effect.Effect<
-			Option.Option<User>,
-			ParseResult.ParseError
-		>;
+		getUser: Effect.Effect<Option.Option<User>, ParseResult.ParseError>;
+
+		/**
+		 * Gets the current user's `UserId`.
+		 * @since 1.0.0
+		 */
+		getUserId: Effect.Effect<Option.Option<UserId>, ParseResult.ParseError>;
 	}
 >() {}
 
@@ -607,8 +614,11 @@ export class Supabase extends Effect.Tag("Supabase")<
  * @since 1.0.0
  */
 export const layer = (
+	// todo - use options {}
 	supabaseUrl: Config.Config<string>,
-	supabaseKey: Config.Config<Secret.Secret>
+	supabaseKey: Config.Config<Secret.Secret>,
+	// defaults to 5 min.
+	userCache?: DurationInput
 ) =>
 	Layer.effect(
 		Supabase,
@@ -653,24 +663,36 @@ export const layer = (
 					client.auth.signInWithPassword(credentials)
 				);
 
-			const getUser = () =>
-				Effect.gen(function* (_) {
-					const { data } = yield* _(
-						Effect.promise(() => client.auth.getUser())
-					);
+			const getUser =
+				yield *
+				_(
+					Effect.cachedWithTTL(
+						Effect.gen(function* (_) {
+							const { data } = yield* _(
+								Effect.promise(() => client.auth.getUser())
+							);
 
-					if (!data) {
-						return Option.none<User>();
-					}
+							if (!data) {
+								return Option.none<User>();
+							}
 
-					const user = yield* _(decodeUser(data.user));
-					yield* _(Effect.log(user));
-					return Option.some(user);
-				});
+							const user = yield* _(decodeUser(data.user));
+							yield* _(Effect.log(user));
+							return Option.some(user);
+						}),
+						userCache ?? "5 minutes"
+					)
+				);
+
+			const getUserId = Effect.map(
+				getUser,
+				Option.map((user) => user.id)
+			);
 
 			return Supabase.of({
 				client,
 				getUser,
+				getUserId,
 				signUp,
 				signInWithOAuth,
 				signInWithPassword
