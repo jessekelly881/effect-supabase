@@ -42,31 +42,31 @@
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
-    "@effect/docgen": "^0.4.0",
-    "@effect/vitest": "^0.2.3",
+    "@effect/docgen": "^0.4.3",
+    "@effect/vitest": "^0.3.3",
     "@fast-check/vitest": "^0.1.0",
-    "@types/node": "^20.11.28",
-    "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
-    "bun": "^1.0.32",
-    "eslint": "^8.51.0",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "bun": "^1.1.4",
+    "eslint": "^9.0.0",
     "eslint-plugin-deprecation": "^2.0.0",
-    "fast-check": "^3.14.0",
+    "fast-check": "^3.17.1",
     "husky": "^9.0.7",
     "jsdom": "^24.0.0",
-    "madge": "^6.1.0",
+    "madge": "^7.0.0",
     "plop": "^4.0.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.4",
-    "vitest": "^1.4.0"
+    "typescript": "^5.4.5",
+    "vite": "^5.2.9",
+    "vitest": "^1.5.0"
   },
   "dependencies": {
     "@effect/dtslint": "^0.1.0",
-    "@effect/platform": "^0.48.22",
-    "@effect/schema": "^0.64.16",
-    "@supabase/postgrest-js": "^1.9.2",
-    "@supabase/supabase-js": "^2.41.1",
-    "effect": "^2.4.15"
+    "@effect/platform": "^0.50.1",
+    "@effect/schema": "^0.66.4",
+    "@supabase/postgrest-js": "^1.15.2",
+    "@supabase/supabase-js": "^2.42.5",
+    "effect": "^3.0.3"
   }
 }
