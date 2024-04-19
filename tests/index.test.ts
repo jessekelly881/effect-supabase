@@ -18,11 +18,11 @@ describe("Supabase", () => {
 			yield *
 				_(
 					Supabase.resolver("tag", {
-						request: Schema.void,
-						result: Schema.void,
+						request: Schema.Void,
+						result: Schema.Void,
 						run: () => sb.client.from("a").select()
 					}).execute(),
-					Effect.catchAll(() => Effect.unit)
+					Effect.catchAll(() => Effect.void)
 				);
 			ctx.expect(mockFetch).toHaveBeenCalledOnce();
 		}).pipe(
