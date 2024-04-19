@@ -14,8 +14,7 @@ import {
 	RequestResolver,
 	pipe,
 	Config,
-	Secret,
-	Cause
+	Secret
 } from "effect";
 import { ParseError } from "@effect/schema/ParseResult";
 import { DurationInput } from "effect/Duration";
