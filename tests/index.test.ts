@@ -5,10 +5,23 @@ import { it } from "@effect/vitest";
 import * as Supabase from "@/index";
 import { Schema } from "@effect/schema";
 
-const mockSupabaseLayer = Supabase.layer(
-	Config.succeed("https://url.com"),
-	Config.succeed(Secret.fromString("abc"))
-);
+describe("SupabaseError", () => {
+	it("fromError", (ctx) => {
+		const method = "testMethod";
+		const err = new Error("msg");
+		const sbErr = Supabase.SupabaseError.fromError(method, err);
+
+		ctx.expect(sbErr.method).toBe(method);
+		ctx.expect(sbErr.message).toBe(err.message);
+		ctx.expect(sbErr.name).toBe(err.name);
+		ctx.expect(sbErr.stack).toBe(err.stack);
+	});
+});
+
+const mockSupabaseLayer = Supabase.layer({
+	supabaseUrl: Config.succeed("https://url.com"),
+	supabaseKey: Config.succeed(Secret.fromString("abc"))
+});
 
 describe("Supabase", () => {
 	it.effect("Fetch injection", (ctx) => {

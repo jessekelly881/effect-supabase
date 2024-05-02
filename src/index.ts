@@ -14,10 +14,29 @@ import {
 	RequestResolver,
 	pipe,
 	Config,
-	Secret
+	Secret,
+	Stream
 } from "effect";
-import { ParseError } from "@effect/schema/ParseResult";
-import { DurationInput } from "effect/Duration";
+
+export class SupabaseError extends S.TaggedError<SupabaseError>()(
+	"SupabaseError",
+	{
+		method: S.String,
+
+		message: S.optional(S.String),
+		name: S.optional(S.String),
+		stack: S.optional(S.String)
+	}
+) {
+	static fromError(method: string, err: Error) {
+		return new SupabaseError({
+			method,
+			message: err.message,
+			name: err.name,
+			stack: err.stack
+		});
+	}
+}
 
 /**
  * @since 1.0.0
@@ -246,7 +265,7 @@ export interface Req<T, A, IA>
 export interface Resolver<T extends string, A, I, E, R> {
 	readonly request: Request.Request.Constructor<Req<T, A, I>, "_tag">;
 	readonly resolver: RequestResolver.RequestResolver<Req<T, A, I>, R>;
-	readonly execute: (_: I) => Effect.Effect<A, ParseError | E, R>;
+	readonly execute: (_: I) => Effect.Effect<A, ParseResult.ParseError | E, R>;
 }
 
 /**
@@ -575,11 +594,28 @@ export class Supabase extends Effect.Tag("Supabase")<
 		client: Sb.SupabaseClient<any, any, any>;
 
 		/**
+		 * Uses onAuthStateChange to watch auth state.
+		 * @since 1.0.0
+		 */
+		authState: Stream.Stream<
+			[Sb.AuthChangeEvent, Option.Option<Session>],
+			never,
+			never
+		>;
+
+		/**
 		 * @since 1.0.0
 		 */
 		signUp: (
 			credentials: Sb.SignUpWithPasswordCredentials
-		) => Effect.Effect<{ user?: User; session?: Session }, Sb.AuthError>;
+		) => Effect.Effect<{ user?: User; session?: Session }, SupabaseError>;
+
+		/**
+		 * @since 1.0.0
+		 */
+		signOut: (
+			options?: Sb.SignOut
+		) => Effect.Effect<void, SupabaseError, never>;
 
 		/**
 		 * @since 1.0.0
@@ -596,41 +632,45 @@ export class Supabase extends Effect.Tag("Supabase")<
 		) => Effect.Effect<Sb.AuthTokenResponsePassword>;
 
 		/**
-		 * Gets the current user.
+		 * Gets the current user from the database
 		 * @since 1.0.0
 		 */
-		getUser: Effect.Effect<Option.Option<User>, ParseResult.ParseError>;
+		getUser: Effect.Effect<Option.Option<User>>;
 
 		/**
-		 * Gets the current user's `UserId`.
+		 * Gets the current (locally saved) session.
 		 * @since 1.0.0
 		 */
-		getUserId: Effect.Effect<Option.Option<UserId>, ParseResult.ParseError>;
+		getSession: Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 	}
 >() {}
 
 /**
  * @since 1.0.0
  */
-export const layer = (
-	// todo - use options {}
-	supabaseUrl: Config.Config<string>,
-	supabaseKey: Config.Config<Secret.Secret>,
-	// defaults to 5 min.
-	userCache?: DurationInput
-) =>
+export const layer = (options: {
+	supabaseUrl: Config.Config<string>;
+	supabaseKey: Config.Config<Secret.Secret>;
+}) =>
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
-			const [url, key] = yield* _(Config.all([supabaseUrl, supabaseKey]));
+			const decodeSession = S.decodeSync(Session);
+			const decodeUser = S.decodeSync(User);
 
+			const config = yield* _(
+				Config.all({
+					url: options.supabaseUrl,
+					key: options.supabaseKey
+				})
+			);
 			const fetch = (yield* _(Effect.serviceOption(Fetch))).pipe(
 				Option.getOrUndefined
 			);
 
 			const client = yield* _(
 				Effect.sync(() =>
-					Sb.createClient(url, Secret.value(key), {
+					Sb.createClient(config.url, Secret.value(config.key), {
 						global: {
 							fetch
 						}
@@ -638,7 +678,35 @@ export const layer = (
 				)
 			);
 
-			const decodeUser = S.decodeUnknown(User);
+			const authState = Stream.async<
+				[Sb.AuthChangeEvent, Option.Option<Session>]
+			>((emit) => {
+				const { data } = client.auth.onAuthStateChange(
+					(event, session) =>
+						emit.single([
+							event,
+							Option.fromNullable(session).pipe(
+								Option.map(decodeSession)
+							)
+						])
+				);
+
+				return Effect.sync(() => data.subscription.unsubscribe());
+			});
+
+			const signOut = (options?: Sb.SignOut) =>
+				Effect.flatMap(
+					Effect.promise(() => client.auth.signOut(options)),
+					(res) =>
+						res.error
+							? Effect.fail(
+									SupabaseError.fromError(
+										"signOut",
+										res.error
+									)
+								)
+							: Effect.void
+				);
 
 			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
 				Effect.flatMap(
@@ -647,7 +715,12 @@ export const layer = (
 						res.data
 							? Effect.succeed(res.data)
 							: res.error
-								? Effect.fail(res.error)
+								? Effect.fail(
+										SupabaseError.fromError(
+											"signUp",
+											res.error
+										)
+									)
 								: Effect.succeed({} as any)
 				);
 
@@ -662,37 +735,42 @@ export const layer = (
 					client.auth.signInWithPassword(credentials)
 				);
 
-			const getUser =
-				yield *
-				_(
-					Effect.cachedWithTTL(
-						Effect.gen(function* (_) {
-							const { data } = yield* _(
-								Effect.promise(() => client.auth.getUser())
-							);
+			const getSession = Effect.promise(() =>
+				client.auth.getSession()
+			).pipe(
+				Effect.flatMap((res) =>
+					res.error
+						? Effect.fail(
+								SupabaseError.fromError("getSession", res.error)
+							)
+						: Effect.succeed(
+								Option.fromNullable(res.data.session).pipe(
+									Option.map(decodeSession)
+								)
+							)
+				)
+			);
 
-							if (!data) {
-								return Option.none<User>();
-							}
-
-							const user = yield* _(decodeUser(data.user));
-							yield* _(Effect.log(user));
-							return Option.some(user);
-						}),
-						userCache ?? "5 minutes"
-					)
+			const getUser = Effect.gen(function* (_) {
+				const { data } = yield* _(
+					Effect.promise(() => client.auth.getUser())
 				);
 
-			const getUserId = Effect.map(
-				getUser,
-				Option.map((user) => user.id)
-			);
+				if (!data || !data.user) {
+					return Option.none<User>();
+				}
+
+				const user = decodeUser(data.user);
+				return Option.some(user);
+			});
 
 			return Supabase.of({
 				client,
 				getUser,
-				getUserId,
+				getSession,
+				authState,
 				signUp,
+				signOut,
 				signInWithOAuth,
 				signInWithPassword
 			});

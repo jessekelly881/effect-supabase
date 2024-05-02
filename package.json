@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/package.json",
   "name": "effect-supabase",
-  "version": "0.0.9",
+  "version": "0.0.8",
   "description": "An Effect wrapper for Supabase",
   "private": false,
   "main": "./dist/index.js",
@@ -42,12 +42,16 @@
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@effect/docgen": "^0.4.3",
+    "@effect/dtslint": "^0.1.0",
+    "@effect/platform": "^0.50.2",
+    "@effect/schema": "^0.66.5",
     "@effect/vitest": "^0.3.3",
     "@fast-check/vitest": "^0.1.0",
     "@types/node": "^20.12.7",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
     "bun": "^1.1.4",
+    "effect": "^3.0.3",
     "eslint": "^9.0.0",
     "eslint-plugin-deprecation": "^2.0.0",
     "fast-check": "^3.17.1",
@@ -63,11 +67,12 @@
     "vitest": "^1.5.0"
   },
   "dependencies": {
-    "@effect/dtslint": "^0.1.0",
-    "@effect/platform": "^0.50.1",
-    "@effect/schema": "^0.66.4",
     "@supabase/postgrest-js": "^1.15.2",
-    "@supabase/supabase-js": "^2.42.5",
+    "@supabase/supabase-js": "^2.42.5"
+  },
+  "peerDependencies": {
+    "@effect/platform": "^0.50.2",
+    "@effect/schema": "^0.66.5",
     "effect": "^3.0.3"
   }
 }
