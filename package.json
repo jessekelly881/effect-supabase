@@ -51,7 +51,7 @@
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
     "bun": "^1.1.4",
-    "effect": "^3.1.1",
+    "effect": "^3.0.5",
     "eslint": "^9.0.0",
     "eslint-plugin-deprecation": "^2.0.0",
     "fast-check": "^3.17.1",
