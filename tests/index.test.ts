@@ -6,6 +6,11 @@ import * as Supabase from "@/index";
 import { Schema } from "@effect/schema";
 
 describe("SupabaseError", () => {
+	it("new SupabaseError(...)", (ctx) => {
+		const sbErr = new Supabase.SupabaseError({ method: "testMethod" });
+		ctx.expect(sbErr.name).toBe("SupabaseError");
+	});
+
 	it("fromError", (ctx) => {
 		const method = "testMethod";
 		const err = new Error("msg");
