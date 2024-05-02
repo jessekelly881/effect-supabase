@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.10
+
+### Patch Changes
+
+- bcb4217: effect version
+
 ## 0.0.9
 
 ### Patch Changes
