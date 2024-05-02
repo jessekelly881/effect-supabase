@@ -25,6 +25,8 @@ Added in v1.0.0
   - [Session (interface)](#session-interface)
   - [StorageObject (class)](#storageobject-class)
   - [Supabase (class)](#supabase-class)
+  - [SupabaseError (class)](#supabaseerror-class)
+    - [fromError (static method)](#fromerror-static-method)
   - [SupabaseErrorId](#supabaseerrorid)
   - [SupabaseErrorId (type alias)](#supabaseerrorid-type-alias)
   - [User](#user)
@@ -110,7 +112,7 @@ Added in v1.0.0
 export interface Resolver<T extends string, A, I, E, R> {
   readonly request: Request.Request.Constructor<Req<T, A, I>, "_tag">
   readonly resolver: RequestResolver.RequestResolver<Req<T, A, I>, R>
-  readonly execute: (_: I) => Effect.Effect<A, ParseError | E, R>
+  readonly execute: (_: I) => Effect.Effect<A, ParseResult.ParseError | E, R>
 }
 ```
 
@@ -177,6 +179,28 @@ Added in v1.0.0
 
 ```ts
 export declare class Supabase
+```
+
+Added in v1.0.0
+
+## SupabaseError (class)
+
+**Signature**
+
+```ts
+export declare class SupabaseError
+```
+
+Added in v1.0.0
+
+### fromError (static method)
+
+Converts an instance of Error to an instance of SupabaseError
+
+**Signature**
+
+```ts
+static fromError(method: string, err: Error)
 ```
 
 Added in v1.0.0
@@ -286,11 +310,10 @@ Added in v1.0.0
 **Signature**
 
 ```ts
-export declare const layer: (
-  supabaseUrl: Config.Config<string>,
-  supabaseKey: Config.Config<Secret.Secret>,
-  userCache?: DurationInput
-) => Layer.Layer<Supabase, ConfigError, never>
+export declare const layer: (options: {
+  supabaseUrl: Config.Config<string>
+  supabaseKey: Config.Config<Secret.Secret>
+}) => Layer.Layer<Supabase, ConfigError, never>
 ```
 
 Added in v1.0.0

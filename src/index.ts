@@ -18,6 +18,9 @@ import {
 	Stream
 } from "effect";
 
+/**
+ * @since 1.0.0
+ */
 export class SupabaseError extends S.TaggedError<SupabaseError>()(
 	"SupabaseError",
 	{
@@ -28,6 +31,10 @@ export class SupabaseError extends S.TaggedError<SupabaseError>()(
 		stack: S.optional(S.String)
 	}
 ) {
+	/**
+	 * Converts an instance of Error to an instance of SupabaseError
+	 * @since 1.0.0
+	 */
 	static fromError(method: string, err: Error) {
 		return new SupabaseError({
 			method,
