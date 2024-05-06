@@ -23,10 +23,10 @@ describe("SupabaseError", () => {
 	});
 });
 
-const mockSupabaseLayer = Supabase.layer({
-	supabaseUrl: Config.succeed("https://url.com"),
-	supabaseKey: Config.succeed(Secret.fromString("abc"))
-});
+const mockSupabaseLayer = Supabase.layer(
+	Config.succeed("https://url.com"),
+	Config.succeed(Secret.fromString("abc"))
+);
 
 describe("Supabase", () => {
 	it.effect("Fetch injection", (ctx) => {
