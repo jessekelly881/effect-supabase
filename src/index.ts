@@ -243,6 +243,18 @@ export interface Session extends S.Schema.Type<typeof _Session> {}
  */
 export const Session: S.Schema<Session, Sb.Session> = _Session;
 
+/** @internal  */
+const decodeSession = S.decodeSync(Session);
+
+/** @internal  */
+const decodeUser = S.decodeSync(User);
+
+/** @internal  */
+const wrapAuthResponse = (methodName: string) => (res: Sb.AuthResponse) =>
+	res.error
+		? SupabaseError.fromError(methodName, res.error)
+		: Effect.succeed(Option.map(Option.fromNullable(res.data.session), decodeSession));
+
 /**
  * @since 1.0.0
  */
@@ -617,7 +629,7 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 */
 		signUp: (
 			credentials: Sb.SignUpWithPasswordCredentials
-		) => Effect.Effect<Session, SupabaseError>;
+		) => Effect.Effect<Option.Option<Session>, SupabaseError>;
 
 		/**
 		 * @since 1.0.0
@@ -646,6 +658,11 @@ export class Supabase extends Effect.Tag("Supabase")<
 			credentials: Sb.SignInWithPasswordCredentials
 		) => Effect.Effect<Session, SupabaseError>;
 
+		setSession: (tokens: {
+			accessToken: string;
+			refreshToken: string;
+		}) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
+
 		/**
 		 * Gets the current user from the database
 		 * @since 1.0.0
@@ -671,9 +688,6 @@ export const layer = (
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
-			const decodeSession = S.decodeSync(Session);
-			const decodeUser = S.decodeSync(User);
-
 			const config = yield* _(
 				Config.all({
 					url: urlConfig,
@@ -729,16 +743,7 @@ export const layer = (
 			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
 				Effect.flatMap(
 					Effect.promise(() => client.auth.signUp(credentials)),
-					(res) =>
-						res.error
-							? Effect.fail(
-									SupabaseError.fromError("signUp", res.error)
-								)
-							: res.data && res.data.session
-								? Effect.succeed(
-										decodeSession(res.data.session)
-									)
-								: Effect.die(Cause.UnknownException)
+					wrapAuthResponse("signUp")
 				);
 
 			const signInWithOAuth = (
@@ -757,6 +762,20 @@ export const layer = (
 								)
 							: Effect.succeed(s.data)
 					)
+				);
+
+			const setSession = (tokens: {
+				accessToken: string;
+				refreshToken: string;
+			}) =>
+				Effect.flatMap(
+					Effect.promise(() =>
+						client.auth.setSession({
+							access_token: tokens.accessToken,
+							refresh_token: tokens.refreshToken
+						})
+					),
+					wrapAuthResponse("setSession")
 				);
 
 			const signInWithPassword = (
@@ -817,7 +836,8 @@ export const layer = (
 				signUp,
 				signOut,
 				signInWithOAuth,
-				signInWithPassword
+				signInWithPassword,
+				setSession
 			});
 		})
 	);
