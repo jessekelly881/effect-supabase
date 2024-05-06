@@ -1,11 +1,5 @@
 # @kellyjesse881/empty
 
-## 0.0.13
-
-### Patch Changes
-
-- a23a68e: added auth.setSession
-
 ## 0.0.12
 
 ### Patch Changes

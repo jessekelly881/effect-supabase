@@ -658,6 +658,10 @@ export class Supabase extends Effect.Tag("Supabase")<
 			credentials: Sb.SignInWithPasswordCredentials
 		) => Effect.Effect<Session, SupabaseError>;
 
+		signInWithIdToken: (
+			credentials: Sb.SignInWithIdTokenCredentials
+		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
+
 		setSession: (tokens: {
 			accessToken: string;
 			refreshToken: string;
@@ -799,6 +803,16 @@ export const layer = (
 					)
 				);
 
+			const signInWithIdToken = (
+				credentials: Sb.SignInWithIdTokenCredentials
+			) =>
+				Effect.flatMap(
+					Effect.promise(() =>
+						client.auth.signInWithIdToken(credentials)
+					),
+					wrapAuthResponse("signInWithIdToken")
+				);
+
 			const getSession = Effect.promise(() =>
 				client.auth.getSession()
 			).pipe(
@@ -837,7 +851,8 @@ export const layer = (
 				signOut,
 				signInWithOAuth,
 				signInWithPassword,
-				setSession
+				setSession,
+				signInWithIdToken
 			});
 		})
 	);
