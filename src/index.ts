@@ -15,7 +15,9 @@ import {
 	pipe,
 	Config,
 	Secret,
-	Stream
+	Stream,
+	Cause,
+	Struct
 } from "effect";
 
 /**
@@ -615,7 +617,7 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 */
 		signUp: (
 			credentials: Sb.SignUpWithPasswordCredentials
-		) => Effect.Effect<{ user?: User; session?: Session }, SupabaseError>;
+		) => Effect.Effect<Session, SupabaseError>;
 
 		/**
 		 * @since 1.0.0
@@ -629,14 +631,14 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 */
 		signInWithOAuth: (
 			credentials: Sb.SignInWithOAuthCredentials
-		) => Effect.Effect<Sb.OAuthResponse>;
+		) => Effect.Effect<void, SupabaseError>;
 
 		/**
 		 * @since 1.0.0
 		 */
 		signInWithPassword: (
 			credentials: Sb.SignInWithPasswordCredentials
-		) => Effect.Effect<Sb.AuthTokenResponsePassword>;
+		) => Effect.Effect<Session, SupabaseError>;
 
 		/**
 		 * Gets the current user from the database
@@ -655,22 +657,25 @@ export class Supabase extends Effect.Tag("Supabase")<
 /**
  * @since 1.0.0
  */
-export const layer = (options: {
-	supabaseUrl: Config.Config<string>;
-	supabaseKey: Config.Config<Secret.Secret>;
-}) =>
+export const layer = (
+	urlConfig: Config.Config<string>,
+	keyConfig: Config.Config<Secret.Secret>,
+	options?: Sb.SupabaseClientOptions<"public">
+) =>
 	Layer.effect(
 		Supabase,
 		Effect.gen(function* (_) {
 			const decodeSession = S.decodeSync(Session);
 			const decodeUser = S.decodeSync(User);
 
-			const config = yield* _(
-				Config.all({
-					url: options.supabaseUrl,
-					key: options.supabaseKey
-				})
-			);
+			const config =
+				yield *
+				_(
+					Config.all({
+						url: urlConfig,
+						key: keyConfig
+					})
+				);
 			const fetch = (yield* _(Effect.serviceOption(Fetch))).pipe(
 				Option.getOrUndefined
 			);
@@ -678,7 +683,9 @@ export const layer = (options: {
 			const client = yield* _(
 				Effect.sync(() =>
 					Sb.createClient(config.url, Secret.value(config.key), {
+						...Struct.omit(options || {}, "global"),
 						global: {
+							...Struct.omit(options?.global || {}, "fetch"),
 							fetch
 						}
 					})
@@ -719,27 +726,54 @@ export const layer = (options: {
 				Effect.flatMap(
 					Effect.promise(() => client.auth.signUp(credentials)),
 					(res) =>
-						res.data
-							? Effect.succeed(res.data)
-							: res.error
-								? Effect.fail(
-										SupabaseError.fromError(
-											"signUp",
-											res.error
-										)
+						res.error
+							? Effect.fail(
+									SupabaseError.fromError("signUp", res.error)
+								)
+							: res.data && res.data.session
+								? Effect.succeed(
+										decodeSession(res.data.session)
 									)
-								: Effect.succeed({} as any)
+								: Effect.die(Cause.UnknownException)
 				);
 
 			const signInWithOAuth = (
 				credentials: Sb.SignInWithOAuthCredentials
-			) => Effect.promise(() => client.auth.signInWithOAuth(credentials));
+			) =>
+				Effect.promise(() =>
+					client.auth.signInWithOAuth(credentials)
+				).pipe(
+					Effect.flatMap((s) =>
+						s.error
+							? Effect.fail(
+									SupabaseError.fromError(
+										"signInWithOAuth",
+										s.error
+									)
+								)
+							: Effect.void
+					)
+				);
 
 			const signInWithPassword = (
+				// todo - return WeakPassword obj
 				credentials: Sb.SignInWithPasswordCredentials
 			) =>
 				Effect.promise(() =>
 					client.auth.signInWithPassword(credentials)
+				).pipe(
+					Effect.flatMap((s) =>
+						s.error
+							? Effect.fail(
+									SupabaseError.fromError(
+										"signInWithOAuth",
+										s.error
+									)
+								)
+							: s.data
+								? Effect.succeed(decodeSession(s.data.session))
+								: Effect.die(Cause.UnknownException)
+					)
 				);
 
 			const getSession = Effect.promise(() =>
