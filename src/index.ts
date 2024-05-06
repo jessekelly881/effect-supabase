@@ -631,7 +631,13 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 */
 		signInWithOAuth: (
 			credentials: Sb.SignInWithOAuthCredentials
-		) => Effect.Effect<void, SupabaseError>;
+		) => Effect.Effect<
+			{
+				provider: Sb.Provider;
+				url: string;
+			},
+			SupabaseError
+		>;
 
 		/**
 		 * @since 1.0.0
@@ -668,14 +674,12 @@ export const layer = (
 			const decodeSession = S.decodeSync(Session);
 			const decodeUser = S.decodeSync(User);
 
-			const config =
-				yield *
-				_(
-					Config.all({
-						url: urlConfig,
-						key: keyConfig
-					})
-				);
+			const config = yield* _(
+				Config.all({
+					url: urlConfig,
+					key: keyConfig
+				})
+			);
 			const fetch = (yield* _(Effect.serviceOption(Fetch))).pipe(
 				Option.getOrUndefined
 			);
@@ -751,7 +755,7 @@ export const layer = (
 										s.error
 									)
 								)
-							: Effect.void
+							: Effect.succeed(s.data)
 					)
 				);
 
