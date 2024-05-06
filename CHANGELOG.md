@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.11
+
+### Patch Changes
+
+- f264115: updated layer api
+
 ## 0.0.10
 
 ### Patch Changes
