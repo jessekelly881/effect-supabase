@@ -1,5 +1,12 @@
 # @kellyjesse881/empty
 
+## 0.0.13
+
+### Patch Changes
+
+- 20ed64f: added auth.signInWithIdToken
+- 20ed64f: added auth.setSession
+
 ## 0.0.12
 
 ### Patch Changes
