@@ -658,10 +658,23 @@ export class Supabase extends Effect.Tag("Supabase")<
 			credentials: Sb.SignInWithPasswordCredentials
 		) => Effect.Effect<Session, SupabaseError>;
 
+		/**
+		 * @since 1.0.0
+		 */
+		signInWithOtp: (
+			credentials: Sb.SignInWithPasswordlessCredentials
+		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
+
+		/**
+		 * @since 1.0.0
+		 */
 		signInWithIdToken: (
 			credentials: Sb.SignInWithIdTokenCredentials
 		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 
+		/**
+		 * @since 1.0.0
+		 */
 		setSession: (tokens: {
 			accessToken: string;
 			refreshToken: string;
@@ -678,6 +691,13 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 * @since 1.0.0
 		 */
 		getSession: Effect.Effect<Option.Option<Session>, SupabaseError, never>;
+
+		/**
+		 * @since 1.0.0
+		 */
+		verifyOtp: (
+			credentials: Sb.VerifyOtpParams
+		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 	}
 >() {}
 
@@ -813,6 +833,22 @@ export const layer = (
 					wrapAuthResponse("signInWithIdToken")
 				);
 
+			const signInWithOtp = (
+				credentials: Sb.SignInWithPasswordlessCredentials
+			) =>
+				Effect.flatMap(
+					Effect.promise(() =>
+						client.auth.signInWithOtp(credentials)
+					),
+					wrapAuthResponse("signInWithOtp")
+				);
+
+			const verifyOtp = (credentials: Sb.VerifyOtpParams) =>
+				Effect.flatMap(
+					Effect.promise(() => client.auth.verifyOtp(credentials)),
+					wrapAuthResponse("signInWithOtp")
+				);
+
 			const getSession = Effect.promise(() =>
 				client.auth.getSession()
 			).pipe(
@@ -852,7 +888,9 @@ export const layer = (
 				signInWithOAuth,
 				signInWithPassword,
 				setSession,
-				signInWithIdToken
+				signInWithIdToken,
+				signInWithOtp,
+				verifyOtp
 			});
 		})
 	);
