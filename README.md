@@ -25,3 +25,23 @@ export const getEventById = (id: EventId) =>
     }).execute(id)
   ).pipe(Effect.withSpan("getEventById", { attributes: { id } }));
 ```
+
+## Functions
+
+Simplified edge functions using Effect and HatTip.
+
+```ts
+import { Effect } from "npm:effect";
+import { createServeHandler } from "npm:@hattip/adapter-deno";
+import { HttpServer } from "npm:@effect/platform";
+
+const handler = HttpServer.app.toWebHandler(
+  Effect.map(HttpServer.request.ServerRequest, (req: Request) =>
+   HttpServer.response.text(req.url),
+  )
+ );
+
+Deno.serve(
+ createServeHandler(({ request }: { request: Request }) => handler(request)),
+);
+```
