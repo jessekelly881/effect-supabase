@@ -1,9 +1,15 @@
-import { describe, vi } from "vitest";
+import { beforeAll, describe, vi } from "vitest";
 import { Fetch } from "@effect/platform/Http/Client";
-import { Effect, Config, Secret } from "effect";
+import { Effect } from "effect";
 import { it } from "@effect/vitest";
 import * as Supabase from "@/index";
 import { Schema } from "@effect/schema";
+import {
+	tableSchemas,
+	mockSupabaseLayer,
+	mockServer,
+	testTodos
+} from "./utils";
 
 describe("SupabaseError", () => {
 	it("new SupabaseError(...)", (ctx) => {
@@ -23,29 +29,39 @@ describe("SupabaseError", () => {
 	});
 });
 
-const mockSupabaseLayer = Supabase.layer(
-	Config.succeed("https://url.com"),
-	Config.succeed(Secret.fromString("abc"))
-);
+beforeAll(() => mockServer.listen());
 
 describe("Supabase", () => {
 	it.effect("Fetch injection", (ctx) => {
-		const mockFetch: typeof fetch = vi.fn();
+		const mockFetch = vi.fn();
 		return Effect.gen(function* (_) {
-			const sb = yield * _(Supabase.Supabase);
-			yield *
-				_(
-					Supabase.resolver("tag", {
-						request: Schema.Void,
-						result: Schema.Void,
-						run: () => sb.client.from("a").select()
-					}).execute(),
-					Effect.catchAll(() => Effect.void)
-				);
+			const sb = yield* Supabase.Supabase;
+			yield* _(
+				Supabase.resolver("tag", {
+					request: Schema.Void,
+					result: Schema.Void,
+					run: () => sb.client.from("table-name").select()
+				}).execute(),
+				Effect.catchAll(() => Effect.void)
+			);
 			ctx.expect(mockFetch).toHaveBeenCalledOnce();
 		}).pipe(
 			Effect.provide(mockSupabaseLayer),
 			Effect.provideService(Fetch, mockFetch)
 		);
 	});
+
+	it.effect("execute", (ctx) =>
+		Effect.gen(function* () {
+			const sb = yield* Supabase.Supabase;
+			const r = Supabase.resolver("tag", {
+				request: Schema.Number,
+				result: tableSchemas.todos,
+				run: (ids) => sb.client.from("todos").select().in("id", ids)
+			});
+
+			const result = yield* r.execute(0);
+			ctx.expect(result).toEqual(testTodos[0]);
+		}).pipe(Effect.provide(mockSupabaseLayer))
+	);
 });
