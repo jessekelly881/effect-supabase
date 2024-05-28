@@ -7,6 +7,7 @@ import { Secret, Config } from "effect";
 import { http } from "msw";
 import { setupServer } from "msw/node";
 import * as fc from "fast-check";
+import { HttpServer } from "@effect/platform";
 
 export const Todo = Schema.Struct({
 	id: Schema.String,
@@ -35,11 +36,12 @@ export const mockSupabaseLayer = Supabase.layer(
 
 export const testTodos = [{ id: "1", text: "todo 1", done: false }];
 
+const router = HttpServer.router.empty.pipe(
+	HttpServer.router.all("*", HttpServer.response.json(testTodos)),
+);
+
 export const mockServer = setupServer(
-	http.get(`${SUPABASE_URL}/rest/v1/todos`, async (s) => {
-		return new Response(JSON.stringify(testTodos));
-	}),
-	http.get(`${SUPABASE_URL}/rest/v1/users`, async (s) => {
-		return new Response(JSON.stringify([]));
-	})
+	http.all(`${SUPABASE_URL}/rest/v1/todos`, (s) =>
+		HttpServer.app.toWebHandler(router)(s.request),
+	),
 );
