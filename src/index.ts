@@ -1,23 +1,23 @@
+import { Fetch } from "@effect/platform/Http/Client";
+import { type ParseResult, Schema as S } from "@effect/schema";
+import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
 /**
  * @since 1.0.0
  */
 import * as Sb from "@supabase/supabase-js";
-import { Schema as S, ParseResult } from "@effect/schema";
-import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import { Fetch } from "@effect/platform/Http/Client";
 import {
-	Effect,
-	Option,
-	Layer,
+	Cause,
+	Config,
 	Data,
+	Effect,
+	Layer,
+	Option,
 	Request,
 	RequestResolver,
-	pipe,
-	Config,
 	Secret,
 	Stream,
-	Cause,
-	Struct
+	Struct,
+	pipe,
 } from "effect";
 
 /**
@@ -30,8 +30,8 @@ export class SupabaseError extends S.TaggedError<SupabaseError>()(
 
 		message: S.optional(S.String),
 		name: S.optional(S.String),
-		stack: S.optional(S.String)
-	}
+		stack: S.optional(S.String),
+	},
 ) {
 	/**
 	 * Converts an instance of Error to an instance of SupabaseError
@@ -42,7 +42,7 @@ export class SupabaseError extends S.TaggedError<SupabaseError>()(
 			method,
 			message: err.message,
 			name: err.name,
-			stack: err.stack
+			stack: err.stack,
 		});
 	}
 }
@@ -64,7 +64,7 @@ export const ResultLengthMismatch = (expected: number, actual: number) =>
 	Data.tagged<ResultLengthMismatch>("ResultLengthMismatch")({
 		[SupabaseErrorId]: SupabaseErrorId,
 		expected,
-		actual
+		actual,
 	});
 
 /**
@@ -82,7 +82,7 @@ const ps = S.propertySignature;
 /** @internal */
 const TimeStamped = S.Struct({
 	createdAt: S.Date.pipe(ps, S.fromKey("created_at")),
-	updatedAt: S.Date.pipe(ps, S.fromKey("updated_at"))
+	updatedAt: S.Date.pipe(ps, S.fromKey("updated_at")),
 });
 
 /**
@@ -98,7 +98,7 @@ export type UserId = S.Schema.Type<typeof UserId>;
 /** @internal */
 const _AppMetadata = S.Struct(
 	{ provider: S.optional(S.String) },
-	S.Record(S.String, S.Unknown)
+	S.Record(S.String, S.Unknown),
 );
 
 /**
@@ -134,13 +134,13 @@ const _UserIdentity = S.Struct({
 	id: S.String,
 	userId: UserId.pipe(ps, S.fromKey("user_id")),
 	identityData: S.optional(S.Record(S.String, S.Unknown)).pipe(
-		S.fromKey("identity_data")
+		S.fromKey("identity_data"),
 	),
 	identityId: S.String.pipe(ps, S.fromKey("identity_id")),
 	provider: S.String,
 	lastSignInAt: S.optional(S.String).pipe(S.fromKey("last_sign_in_at")),
 	createdAt: S.optional(S.Date).pipe(S.fromKey("created_at")),
-	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
+	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at")),
 });
 
 /**
@@ -160,7 +160,7 @@ const _Factor = S.Struct({
 	friendlyName: S.optional(S.String).pipe(S.fromKey("friendly_name")),
 	factorType: S.String.pipe(ps, S.fromKey("factor_type")),
 	status: S.Literal("verified", "unverified"),
-	...TimeStamped.fields
+	...TimeStamped.fields,
 });
 
 /**
@@ -181,12 +181,10 @@ const _User = S.Struct({
 	aud: S.String,
 
 	confirmationSentAt: S.optional(S.Date).pipe(
-		S.fromKey("confirmation_sent_at")
+		S.fromKey("confirmation_sent_at"),
 	),
 	recoverySentAt: S.optional(S.Date).pipe(S.fromKey("recovery_sent_at")),
-	emailChangeSentAt: S.optional(S.Date).pipe(
-		S.fromKey("email_change_sent_at")
-	),
+	emailChangeSentAt: S.optional(S.Date).pipe(S.fromKey("email_change_sent_at")),
 	newEmail: S.optional(S.String).pipe(S.fromKey("new_email")),
 	newPhone: S.optional(S.String).pipe(S.fromKey("new_phone")),
 	invitedAt: S.optional(S.String).pipe(S.fromKey("invited_at")),
@@ -195,16 +193,14 @@ const _User = S.Struct({
 	phone: S.optional(S.String),
 	confirmedAt: S.optional(S.Date).pipe(S.fromKey("confirmed_at")),
 	emailConfirmedAt: S.optional(S.Date).pipe(S.fromKey("email_confirmed_at")),
-	phoneConfirmedAt: S.optional(S.String).pipe(
-		S.fromKey("phone_confirmed_at")
-	),
+	phoneConfirmedAt: S.optional(S.String).pipe(S.fromKey("phone_confirmed_at")),
 	lastSignInAt: S.optional(S.Date).pipe(S.fromKey("last_sign_in_at")),
 	role: S.optional(S.String),
 	identities: S.optional(S.Array(UserIdentity).pipe(S.mutable)),
 	factors: S.optional(S.Array(Factor).pipe(S.mutable)),
 
 	createdAt: S.Date.pipe(ps, S.fromKey("created_at")),
-	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at"))
+	updatedAt: S.optional(S.Date).pipe(S.fromKey("updated_at")),
 });
 
 /**
@@ -220,17 +216,17 @@ export const User: S.Schema<User, Sb.User> = _User;
 /** @internal */
 const _Session = S.Struct({
 	providerToken: S.optional(S.String, { nullable: true }).pipe(
-		S.fromKey("provider_token")
+		S.fromKey("provider_token"),
 	),
 	providerRefreshToken: S.optional(S.String, { nullable: true }).pipe(
-		S.fromKey("provider_refresh_token")
+		S.fromKey("provider_refresh_token"),
 	),
 	accessToken: S.String.pipe(ps, S.fromKey("access_token")),
 	refreshToken: S.String.pipe(ps, S.fromKey("refresh_token")),
 	expiresIn: S.Number.pipe(ps, S.fromKey("expires_in")),
 	expiresAt: S.optional(S.Number).pipe(S.fromKey("expires_at")),
 	tokenType: S.String.pipe(ps, S.fromKey("token_type")),
-	user: User
+	user: User,
 });
 
 /**
@@ -253,7 +249,9 @@ const decodeUser = S.decodeSync(User);
 const wrapAuthResponse = (methodName: string) => (res: Sb.AuthResponse) =>
 	res.error
 		? SupabaseError.fromError(methodName, res.error)
-		: Effect.succeed(Option.map(Option.fromNullable(res.data.session), decodeSession));
+		: Effect.succeed(
+				Option.map(Option.fromNullable(res.data.session), decodeSession),
+			);
 
 /**
  * @since 1.0.0
@@ -263,9 +261,9 @@ export class StorageObject extends S.Class<StorageObject>("Storage.Object")(
 	{
 		id: S.UUID,
 		bucketId: S.String.pipe(ps, S.fromKey("bucket_id")),
-		name: S.String
+		name: S.String,
 		// TODO: Add missing fields
-	}
+	},
 ) {}
 
 /**
@@ -298,12 +296,12 @@ export interface Resolver<T extends string, A, I, E, R> {
 export const wrapQuery =
 	<A>() =>
 	<Q extends PostgrestFilterBuilder<any, any, A>>(
-		q: () => Q
+		q: () => Q,
 	): Effect.Effect<A, Sb.PostgrestError> =>
 		Effect.promise((signal) => q().abortSignal(signal)).pipe(
 			Effect.flatMap((res) =>
-				res.error ? Effect.fail(res.error) : Effect.succeed(res.data)
-			)
+				res.error ? Effect.fail(res.error) : Effect.succeed(res.data),
+			),
 		);
 
 /**
@@ -317,7 +315,7 @@ export const resolverId = <
 	IA,
 	II,
 	IR,
-	Q extends PostgrestFilterBuilder<any, any, unknown[]>
+	Q extends PostgrestFilterBuilder<any, any, unknown[]>,
 >(
 	tag: T,
 	options: {
@@ -325,7 +323,7 @@ export const resolverId = <
 		readonly result: S.Schema<A, AI, AR>;
 		readonly resultId: (_: AI) => IA;
 		readonly run: (requests: ReadonlyArray<II>) => Q;
-	}
+	},
 ) => {
 	const request = Request.tagged<Req<T, Option.Option<A>, IA>>(tag);
 	const encodeRequests = S.encode(S.Array(options.id));
@@ -335,9 +333,7 @@ export const resolverId = <
 		(requests: ReadonlyArray<Req<T, Option.Option<A>, IA>>) =>
 			pipe(
 				encodeRequests(requests.map((r) => r.value)),
-				Effect.flatMap((as) =>
-					wrapQuery<unknown[]>()(() => options.run(as))
-				),
+				Effect.flatMap((as) => wrapQuery<unknown[]>()(() => options.run(as))),
 				Effect.flatMap((results) => {
 					const resultsMap = new Map<IA, A>();
 					return Effect.map(decodeResults(results), (decoded) => {
@@ -355,30 +351,23 @@ export const resolverId = <
 							const id = req.value;
 							const result = results.get(id);
 
-							return Request.succeed(
-								req,
-								Option.fromNullable(result)
-							);
+							return Request.succeed(req, Option.fromNullable(result));
 						},
-						{ discard: true }
-					)
+						{ discard: true },
+					),
 				),
 				Effect.catchAllCause((error) =>
-					Effect.forEach(
-						requests,
-						(req) => Request.failCause(req, error),
-						{
-							discard: true
-						}
-					)
-				)
-			)
+					Effect.forEach(requests, (req) => Request.failCause(req, error), {
+						discard: true,
+					}),
+				),
+			),
 	);
 
 	const execute = (i: IA) =>
 		Effect.request(
 			request({ value: i }),
-			RequestResolver.contextFromEffect(resolver)
+			RequestResolver.contextFromEffect(resolver),
 		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
@@ -395,14 +384,14 @@ export const resolver = <
 	AR,
 	AI,
 	A,
-	Q extends PostgrestFilterBuilder<any, any, unknown[]>
+	Q extends PostgrestFilterBuilder<any, any, unknown[]>,
 >(
 	tag: T,
 	options: {
 		readonly request: S.Schema<IA, II, IR>;
 		readonly result: S.Schema<A, AI, AR>;
 		run: (requests: ReadonlyArray<II>) => Q;
-	}
+	},
 ): Resolver<T, A, IA, ResultLengthMismatch | Sb.PostgrestError, IR | AR> => {
 	const request = Request.tagged<Req<T, A, IA>>(tag);
 	const decodeResult = S.decodeUnknown(options.result);
@@ -411,38 +400,32 @@ export const resolver = <
 	const resolver = RequestResolver.makeBatched((requests: Req<T, A, IA>[]) =>
 		pipe(
 			encodeRequests(requests.map((r) => r.value)),
-			Effect.flatMap((as) =>
-				wrapQuery<unknown[]>()(() => options.run(as))
-			),
+			Effect.flatMap((as) => wrapQuery<unknown[]>()(() => options.run(as))),
 			Effect.filterOrFail(
 				(results) => results.length === requests.length,
-				(_) => ResultLengthMismatch(requests.length, _.length)
+				(_) => ResultLengthMismatch(requests.length, _.length),
 			),
 			Effect.flatMap((results) =>
 				Effect.forEach(results, (result, i) =>
 					pipe(
 						decodeResult(result),
-						Effect.flatMap((result) =>
-							Request.succeed(requests[i], result)
-						),
-						Effect.catchAll((error) =>
-							Request.fail(requests[i], error as any)
-						)
-					)
-				)
+						Effect.flatMap((result) => Request.succeed(requests[i], result)),
+						Effect.catchAll((error) => Request.fail(requests[i], error as any)),
+					),
+				),
 			),
 			Effect.catchAll((error) =>
 				Effect.forEach(requests, (req) => Request.fail(req, error), {
-					discard: true
-				})
-			)
-		)
+					discard: true,
+				}),
+			),
+		),
 	);
 
 	const execute = (i: IA) =>
 		Effect.request(
 			request({ value: i }),
-			RequestResolver.contextFromEffect(resolver)
+			RequestResolver.contextFromEffect(resolver),
 		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
@@ -456,51 +439,44 @@ export const resolverVoid = <
 	IR,
 	II,
 	IA,
-	Q extends PostgrestFilterBuilder<any, any, any>
+	Q extends PostgrestFilterBuilder<any, any, any>,
 >(
 	tag: T,
 	options: {
 		readonly request: S.Schema<IA, II, IR>;
 		run: (requests: ReadonlyArray<II>) => Q;
-	}
+	},
 ): Resolver<T, void, IA, ResultLengthMismatch | Sb.PostgrestError, IR> => {
 	const request = Request.tagged<Req<T, void, IA>>(tag);
 	const encodeRequests = S.encode(S.Array(options.request));
 
-	const resolver = RequestResolver.makeBatched(
-		(requests: Req<T, void, IA>[]) =>
-			pipe(
-				encodeRequests(requests.map((r) => r.value)),
-				Effect.flatMap((as) =>
-					wrapQuery<unknown[]>()(() => options.run(as) as any)
-				),
-				Effect.filterOrFail(
-					(results) => results.length === requests.length,
-					(_) => ResultLengthMismatch(requests.length, _.length)
-				),
-				Effect.zipRight(
-					Effect.forEach(
-						requests,
-						(req) => Request.succeed(req, void 0 as any),
-						{ discard: true }
-					)
-				),
-				Effect.catchAll((error) =>
-					Effect.forEach(
-						requests,
-						(req) => Request.fail(req, error),
-						{
-							discard: true
-						}
-					)
-				)
-			)
+	const resolver = RequestResolver.makeBatched((requests: Req<T, void, IA>[]) =>
+		pipe(
+			encodeRequests(requests.map((r) => r.value)),
+			Effect.flatMap((as) =>
+				wrapQuery<unknown[]>()(() => options.run(as) as any),
+			),
+			Effect.filterOrFail(
+				(results) => results.length === requests.length,
+				(_) => ResultLengthMismatch(requests.length, _.length),
+			),
+			Effect.zipRight(
+				Effect.forEach(requests, (req) => Request.succeed(req, void 0 as any), {
+					discard: true,
+				}),
+			),
+			Effect.catchAll((error) =>
+				Effect.forEach(requests, (req) => Request.fail(req, error), {
+					discard: true,
+				}),
+			),
+		),
 	);
 
 	const execute = (i: IA) =>
 		Effect.request(
 			request({ value: i }),
-			RequestResolver.contextFromEffect(resolver)
+			RequestResolver.contextFromEffect(resolver),
 		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
@@ -517,14 +493,14 @@ export const resolverSingle = <
 	IA,
 	II,
 	IR,
-	Q extends PostgrestFilterBuilder<any, any, unknown>
+	Q extends PostgrestFilterBuilder<any, any, unknown>,
 >(
 	tag: T,
 	options: {
 		readonly request: S.Schema<IA, II, IR>;
 		readonly result: S.Schema<A, AI, AR>;
 		readonly run: (request: II) => Q;
-	}
+	},
 ) => {
 	const request = Request.tagged<Req<T, A, IA>>(tag);
 	const encodeRequest = S.encode(options.request);
@@ -534,16 +510,16 @@ export const resolverSingle = <
 		pipe(
 			encodeRequest(req.value),
 			Effect.flatMap((as) =>
-				wrapQuery<unknown>()(() => options.run(as) as any)
+				wrapQuery<unknown>()(() => options.run(as) as any),
 			),
-			Effect.flatMap(decodeResult)
-		)
+			Effect.flatMap(decodeResult),
+		),
 	);
 
 	const execute = (i: IA) =>
 		Effect.request(
 			request({ value: i }),
-			RequestResolver.contextFromEffect(resolver)
+			RequestResolver.contextFromEffect(resolver),
 		).pipe(Effect.withSpan(tag));
 
 	return { request, resolver, execute };
@@ -559,13 +535,13 @@ export function schema<
 	IA,
 	II,
 	IR,
-	Q extends PostgrestFilterBuilder<any, any, unknown>
+	Q extends PostgrestFilterBuilder<any, any, unknown>,
 >(options: {
 	request: S.Schema<IA, II, IR>;
 	result: S.Schema<A, AI, AR>;
 	run: (_: II) => Q;
 }): (
-	_: IA
+	_: IA,
 ) => Effect.Effect<ReadonlyArray<A>, ParseResult.ParseError, IR | AR> {
 	const decodeResult = S.decodeUnknown(S.Array(options.result));
 	const encodeRequest = S.encode(options.request);
@@ -574,11 +550,11 @@ export function schema<
 		pipe(
 			encodeRequest(_),
 			Effect.flatMap((as) =>
-				Effect.promise((signal) =>
-					options.run(as).abortSignal(signal)
-				).pipe(Effect.map((res) => res.data))
+				Effect.promise((signal) => options.run(as).abortSignal(signal)).pipe(
+					Effect.map((res) => res.data),
+				),
 			),
-			Effect.flatMap(decodeResult)
+			Effect.flatMap(decodeResult),
 		);
 }
 
@@ -589,7 +565,7 @@ export function schemaVoid<
 	IA,
 	II,
 	IR,
-	Q extends PostgrestFilterBuilder<any, any, unknown>
+	Q extends PostgrestFilterBuilder<any, any, unknown>,
 >(options: {
 	request: S.Schema<IA, II, IR>;
 	run: (_: II) => Q;
@@ -598,8 +574,8 @@ export function schemaVoid<
 	return (_: IA) =>
 		Effect.asVoid(
 			Effect.flatMap(encodeRequest(_), (as) =>
-				Effect.promise((signal) => options.run(as).abortSignal(signal))
-			)
+				Effect.promise((signal) => options.run(as).abortSignal(signal)),
+			),
 		);
 }
 
@@ -628,21 +604,21 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 * @since 1.0.0
 		 */
 		signUp: (
-			credentials: Sb.SignUpWithPasswordCredentials
+			credentials: Sb.SignUpWithPasswordCredentials,
 		) => Effect.Effect<Option.Option<Session>, SupabaseError>;
 
 		/**
 		 * @since 1.0.0
 		 */
 		signOut: (
-			options?: Sb.SignOut
+			options?: Sb.SignOut,
 		) => Effect.Effect<void, SupabaseError, never>;
 
 		/**
 		 * @since 1.0.0
 		 */
 		signInWithOAuth: (
-			credentials: Sb.SignInWithOAuthCredentials
+			credentials: Sb.SignInWithOAuthCredentials,
 		) => Effect.Effect<
 			{
 				provider: Sb.Provider;
@@ -655,21 +631,21 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 * @since 1.0.0
 		 */
 		signInWithPassword: (
-			credentials: Sb.SignInWithPasswordCredentials
+			credentials: Sb.SignInWithPasswordCredentials,
 		) => Effect.Effect<Session, SupabaseError>;
 
 		/**
 		 * @since 1.0.0
 		 */
 		signInWithOtp: (
-			credentials: Sb.SignInWithPasswordlessCredentials
+			credentials: Sb.SignInWithPasswordlessCredentials,
 		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 
 		/**
 		 * @since 1.0.0
 		 */
 		signInWithIdToken: (
-			credentials: Sb.SignInWithIdTokenCredentials
+			credentials: Sb.SignInWithIdTokenCredentials,
 		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 
 		/**
@@ -696,7 +672,7 @@ export class Supabase extends Effect.Tag("Supabase")<
 		 * @since 1.0.0
 		 */
 		verifyOtp: (
-			credentials: Sb.VerifyOtpParams
+			credentials: Sb.VerifyOtpParams,
 		) => Effect.Effect<Option.Option<Session>, SupabaseError, never>;
 	}
 >() {}
@@ -707,7 +683,7 @@ export class Supabase extends Effect.Tag("Supabase")<
 export const layer = (
 	urlConfig: Config.Config<string>,
 	keyConfig: Config.Config<Secret.Secret>,
-	options?: Sb.SupabaseClientOptions<"public">
+	options?: Sb.SupabaseClientOptions<"public">,
 ) =>
 	Layer.effect(
 		Supabase,
@@ -715,11 +691,11 @@ export const layer = (
 			const config = yield* _(
 				Config.all({
 					url: urlConfig,
-					key: keyConfig
-				})
+					key: keyConfig,
+				}),
 			);
 			const fetch = (yield* _(Effect.serviceOption(Fetch))).pipe(
-				Option.getOrUndefined
+				Option.getOrUndefined,
 			);
 
 			const client = yield* _(
@@ -728,23 +704,20 @@ export const layer = (
 						...Struct.omit(options || {}, "global"),
 						global: {
 							...Struct.omit(options?.global || {}, "fetch"),
-							fetch
-						}
-					})
-				)
+							fetch,
+						},
+					}),
+				),
 			);
 
 			const authState = Stream.async<
 				[Sb.AuthChangeEvent, Option.Option<Session>]
 			>((emit) => {
-				const { data } = client.auth.onAuthStateChange(
-					(event, session) =>
-						emit.single([
-							event,
-							Option.fromNullable(session).pipe(
-								Option.map(decodeSession)
-							)
-						])
+				const { data } = client.auth.onAuthStateChange((event, session) =>
+					emit.single([
+						event,
+						Option.fromNullable(session).pipe(Option.map(decodeSession)),
+					]),
 				);
 
 				return Effect.sync(() => data.subscription.unsubscribe());
@@ -755,37 +728,23 @@ export const layer = (
 					Effect.promise(() => client.auth.signOut(options)),
 					(res) =>
 						res.error
-							? Effect.fail(
-									SupabaseError.fromError(
-										"signOut",
-										res.error
-									)
-								)
-							: Effect.void
+							? Effect.fail(SupabaseError.fromError("signOut", res.error))
+							: Effect.void,
 				);
 
 			const signUp = (credentials: Sb.SignUpWithPasswordCredentials) =>
 				Effect.flatMap(
 					Effect.promise(() => client.auth.signUp(credentials)),
-					wrapAuthResponse("signUp")
+					wrapAuthResponse("signUp"),
 				);
 
-			const signInWithOAuth = (
-				credentials: Sb.SignInWithOAuthCredentials
-			) =>
-				Effect.promise(() =>
-					client.auth.signInWithOAuth(credentials)
-				).pipe(
+			const signInWithOAuth = (credentials: Sb.SignInWithOAuthCredentials) =>
+				Effect.promise(() => client.auth.signInWithOAuth(credentials)).pipe(
 					Effect.flatMap((s) =>
 						s.error
-							? Effect.fail(
-									SupabaseError.fromError(
-										"signInWithOAuth",
-										s.error
-									)
-								)
-							: Effect.succeed(s.data)
-					)
+							? Effect.fail(SupabaseError.fromError("signInWithOAuth", s.error))
+							: Effect.succeed(s.data),
+					),
 				);
 
 			const setSession = (tokens: {
@@ -796,79 +755,62 @@ export const layer = (
 					Effect.promise(() =>
 						client.auth.setSession({
 							access_token: tokens.accessToken,
-							refresh_token: tokens.refreshToken
-						})
+							refresh_token: tokens.refreshToken,
+						}),
 					),
-					wrapAuthResponse("setSession")
+					wrapAuthResponse("setSession"),
 				);
 
 			const signInWithPassword = (
 				// todo - return WeakPassword obj
-				credentials: Sb.SignInWithPasswordCredentials
+				credentials: Sb.SignInWithPasswordCredentials,
 			) =>
-				Effect.promise(() =>
-					client.auth.signInWithPassword(credentials)
-				).pipe(
+				Effect.promise(() => client.auth.signInWithPassword(credentials)).pipe(
 					Effect.flatMap((s) =>
 						s.error
-							? Effect.fail(
-									SupabaseError.fromError(
-										"signInWithOAuth",
-										s.error
-									)
-								)
+							? Effect.fail(SupabaseError.fromError("signInWithOAuth", s.error))
 							: s.data
 								? Effect.succeed(decodeSession(s.data.session))
-								: Effect.die(Cause.UnknownException)
-					)
+								: Effect.die(Cause.UnknownException),
+					),
 				);
 
 			const signInWithIdToken = (
-				credentials: Sb.SignInWithIdTokenCredentials
+				credentials: Sb.SignInWithIdTokenCredentials,
 			) =>
 				Effect.flatMap(
-					Effect.promise(() =>
-						client.auth.signInWithIdToken(credentials)
-					),
-					wrapAuthResponse("signInWithIdToken")
+					Effect.promise(() => client.auth.signInWithIdToken(credentials)),
+					wrapAuthResponse("signInWithIdToken"),
 				);
 
 			const signInWithOtp = (
-				credentials: Sb.SignInWithPasswordlessCredentials
+				credentials: Sb.SignInWithPasswordlessCredentials,
 			) =>
 				Effect.flatMap(
-					Effect.promise(() =>
-						client.auth.signInWithOtp(credentials)
-					),
-					wrapAuthResponse("signInWithOtp")
+					Effect.promise(() => client.auth.signInWithOtp(credentials)),
+					wrapAuthResponse("signInWithOtp"),
 				);
 
 			const verifyOtp = (credentials: Sb.VerifyOtpParams) =>
 				Effect.flatMap(
 					Effect.promise(() => client.auth.verifyOtp(credentials)),
-					wrapAuthResponse("signInWithOtp")
+					wrapAuthResponse("signInWithOtp"),
 				);
 
-			const getSession = Effect.promise(() =>
-				client.auth.getSession()
-			).pipe(
+			const getSession = Effect.promise(() => client.auth.getSession()).pipe(
 				Effect.flatMap((res) =>
 					res.error
-						? Effect.fail(
-								SupabaseError.fromError("getSession", res.error)
-							)
+						? Effect.fail(SupabaseError.fromError("getSession", res.error))
 						: Effect.succeed(
 								Option.fromNullable(res.data.session).pipe(
-									Option.map(decodeSession)
-								)
-							)
-				)
+									Option.map(decodeSession),
+								),
+							),
+				),
 			);
 
 			const getUser = Effect.gen(function* (_) {
-				const { data } = yield* _(
-					Effect.promise(() => client.auth.getUser())
-				);
+				const { data } = yield* _(Effect.promise(() => client.auth.getUser()));
 
 				if (!data || !data.user) {
 					return Option.none<User>();
@@ -890,7 +832,7 @@ export const layer = (
 				setSession,
 				signInWithIdToken,
 				signInWithOtp,
-				verifyOtp
+				verifyOtp,
 			});
-		})
+		}),
 	);
