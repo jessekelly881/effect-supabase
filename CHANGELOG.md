@@ -1,5 +1,11 @@
 # @kellyjesse881/empty
 
+## 0.0.14
+
+### Patch Changes
+
+- d3c75b6: added verifyOtp and signInWithOtp
+
 ## 0.0.13
 
 ### Patch Changes
