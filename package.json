@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "build": "tsup src/**/*.ts --format cjs,esm --dts",
-    "lint": "pnpx @biomejs/biome lint ./src",
+    "lint": "pnpx @biomejs/biome check ./src",
     "dev": "vitest --bail 1 --reporter=dot",
     "test": "vitest run --bail 1 --reporter=basic",
     "ci": "pnpm run lint && pnpm run test && pnpm run build",
